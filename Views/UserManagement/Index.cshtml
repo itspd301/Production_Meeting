@@ -1,0 +1,80 @@
+@model List<UserListItemViewModel>
+@{
+    ViewData["Title"] = "User Management";
+}
+
+<div class="pm-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Users</h5>
+        <a asp-action="Create" class="btn btn-primary btn-sm">
+            <i class="bi bi-person-plus"></i> Add User
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Windows Account</th>
+                    <th>Full Name</th>
+                    <th>Role</th>
+                    <th>Plant / Line Access</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model)
+                {
+                    <tr>
+                        <td><code>@u.UserName</code></td>
+                        <td>@u.FullName</td>
+                        <td>@u.Role</td>
+                        <td>@u.AccessSummary</td>
+                        <td>
+                            <span class="pm-badge-status @(u.IsActive ? "status-green" : "status-red")">
+                                @(u.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="Edit" asp-route-id="@u.Id" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            <button type="button" class="btn btn-sm @(u.IsActive ? "btn-outline-danger" : "btn-outline-success") pm-toggle-active"
+                                    data-user-id="@u.Id" data-active="@u.IsActive.ToString().ToLower()">
+                                <i class="bi @(u.IsActive ? "bi-slash-circle" : "bi-check-circle")"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $('.pm-toggle-active').on('click', function () {
+            var $btn = $(this);
+            var userId = $btn.data('user-id');
+            var newActive = !$btn.data('active');
+            var verb = newActive ? 'activate' : 'deactivate';
+
+            pmConfirm('Are you sure you want to ' + verb + ' this user?', function () {
+                $.post('@Url.Action("SetActive")', { id: userId, isActive: newActive }, function (res) {
+                    if (res.success) {
+                        toastr.success(res.message);
+                        setTimeout(function () { window.location.reload(); }, 700);
+                    } else {
+                        toastr.error(res.message);
+                    }
+                });
+            });
+        });
+    </script>
+}

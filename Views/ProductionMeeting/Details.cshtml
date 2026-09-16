@@ -1,0 +1,110 @@
+@model MeetingEntryViewModel
+@{
+    ViewData["Title"] = "Meeting Details";
+    var auditHistory = ViewBag.AuditHistory as List<KpiTransactionAudit> ?? new List<KpiTransactionAudit>();
+}
+
+<div class="pm-card mb-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+            <h5 class="mb-1">@Model.PlantName &raquo; @Model.LineName</h5>
+            <div class="text-muted small">
+                @Model.MeetingDate.ToString("dd-MMM-yyyy")
+                <span class="pm-badge-status @(Model.Status == "Completed" ? "status-green" : "status-amber") ms-2">@Model.Status</span>
+            </div>
+        </div>
+        <div>
+            @if (Model.Status != "Completed" && (User.IsInRole(Roles.Admin) || User.IsInRole(Roles.Manager) || User.IsInRole(Roles.ProductionUser)))
+            {
+                <a asp-action="Entry" asp-route-plantId="@Model.PlantId" asp-route-lineId="@Model.LineId" asp-route-shiftId="@Model.ShiftId" asp-route-meetingDate="@Model.MeetingDate.ToString("yyyy-MM-dd")" class="btn btn-primary btn-sm">
+                    <i class="bi bi-pencil-square"></i> Continue Entry
+                </a>
+            }
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back to List</a>
+        </div>
+    </div>
+</div>
+
+<div class="pm-card mb-3">
+    <h6 class="mb-3">KPI Scorecard</h6>
+    <div class="table-responsive">
+        <table class="table table-bordered table-sm align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th style="width:70px;">Ind.</th>
+                    <th>Description</th>
+                    <th>Unit</th>
+                    <th>F26</th>
+                    <th>F27 / L4 Target</th>
+                    <th>Week</th>
+                    <th>Month Cum.</th>
+                    <th>YTD</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var group in Model.IndicatorGroups)
+                {
+                    for (var i = 0; i < group.Rows.Count; i++)
+                    {
+                        var row = group.Rows[i];
+                        <tr>
+                            @if (i == 0)
+                            {
+                                <td rowspan="@group.Rows.Count" class="pm-indicator-cell pm-ind-@group.IndicatorCode" title="@group.IndicatorName">
+                                    @group.IndicatorCode
+                                </td>
+                            }
+                            <td>@row.Description</td>
+                            <td>@row.UnitName</td>
+                            <td>@row.F26Value</td>
+                            <td>@row.F27Value</td>
+                            <td>@row.WeekValue</td>
+                            <td>@row.MonthCumValue</td>
+                            <td>@row.YtdValue</td>
+                            <td>@row.Remarks</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="pm-card">
+    <h6 class="mb-3"><i class="bi bi-clock-history"></i> Change History</h6>
+    @if (auditHistory.Count == 0)
+    {
+        <p class="text-muted mb-0">No changes recorded.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>When</th>
+                        <th>Field</th>
+                        <th>Old Value</th>
+                        <th>New Value</th>
+                        <th>Action</th>
+                        <th>Changed By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in auditHistory)
+                    {
+                        <tr>
+                            <td>@a.ChangedDate.ToLocalTime().ToString("dd-MMM-yyyy HH:mm")</td>
+                            <td>@a.FieldName</td>
+                            <td>@(a.OldValue ?? "-")</td>
+                            <td>@(a.NewValue ?? "-")</td>
+                            <td>@a.ActionType</td>
+                            <td>@a.ChangedBy.FullName</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

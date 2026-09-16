@@ -1,0 +1,35 @@
+@model KpiMasterFormViewModel
+@{
+    ViewData["Title"] = "Add KPI";
+}
+
+<div class="pm-card">
+    <h5 class="mb-4">Add KPI</h5>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger" asp-validation-summary="ModelOnly"></div>
+    }
+
+    <form asp-action="Create" method="post">
+        <partial name="_KpiForm" />
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $('#formPlantId').on('change', function () {
+            var plantId = $(this).val();
+            var $line = $('#formLineId');
+            $line.html('<option value="">-- Select Line --</option>');
+            if (!plantId) return;
+
+            $.get('@Url.Action("GetLinesForPlant")', { plantId: plantId }, function (data) {
+                data.forEach(function (l) {
+                    $line.append('<option value="' + l.lineId + '">' + l.name + '</option>');
+                });
+            });
+        });
+    </script>
+}

@@ -1,0 +1,77 @@
+@model KpiMasterFormViewModel
+
+<input type="hidden" asp-for="KpiId" />
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <label asp-for="PlantId" class="form-label"></label>
+        <select asp-for="PlantId" id="formPlantId" class="form-select">
+            <option value="">-- Select Plant --</option>
+            @foreach (var p in Model.Plants)
+            {
+                <option value="@p.Id" selected="@(Model.PlantId == p.Id)">@p.Name</option>
+            }
+        </select>
+        <span asp-validation-for="PlantId" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-6">
+        <label asp-for="LineId" class="form-label"></label>
+        <select asp-for="LineId" id="formLineId" class="form-select">
+            <option value="">-- Select Line --</option>
+            @foreach (var l in Model.Lines)
+            {
+                <option value="@l.Id" selected="@(Model.LineId == l.Id)">@l.Name</option>
+            }
+        </select>
+        <span asp-validation-for="LineId" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-6">
+        <label asp-for="IndicatorId" class="form-label"></label>
+        <select asp-for="IndicatorId" class="form-select">
+            <option value="">-- Select Indicator --</option>
+            @foreach (var i in Model.Indicators)
+            {
+                <option value="@i.Id" selected="@(Model.IndicatorId == i.Id)">@i.Code &mdash; @i.Name</option>
+            }
+        </select>
+        <span asp-validation-for="IndicatorId" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-6">
+        <label asp-for="UnitId" class="form-label"></label>
+        <select asp-for="UnitId" class="form-select">
+            <option value="">-- Select Unit --</option>
+            @foreach (var u in Model.Units)
+            {
+                <option value="@u.Id" selected="@(Model.UnitId == u.Id)">@u.Name</option>
+            }
+        </select>
+        <span asp-validation-for="UnitId" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-8">
+        <label asp-for="Description" class="form-label"></label>
+        <input asp-for="Description" class="form-control" />
+        <span asp-validation-for="Description" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-2">
+        <label asp-for="DisplayOrder" class="form-label"></label>
+        <input asp-for="DisplayOrder" type="number" class="form-control" />
+        <span asp-validation-for="DisplayOrder" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-2 d-flex align-items-end">
+        <div class="form-check">
+            <input asp-for="IsActive" class="form-check-input" />
+            <label asp-for="IsActive" class="form-check-label"></label>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-end gap-2 mt-4">
+    <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary">Save</button>
+</div>

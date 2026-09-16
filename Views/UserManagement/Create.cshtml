@@ -1,0 +1,25 @@
+@model UserFormViewModel
+@{
+    ViewData["Title"] = "Add User";
+}
+
+<div class="pm-card">
+    <h5 class="mb-4">Add User</h5>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger" asp-validation-summary="ModelOnly"></div>
+    }
+
+    <form asp-action="Create" method="post">
+        <partial name="_UserForm" />
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/user-form.js" asp-append-version="true"></script>
+    <script>
+        initUserAccessForm('@Url.Action("GetLinesForPlant")');
+    </script>
+}

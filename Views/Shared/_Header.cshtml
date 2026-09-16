@@ -1,0 +1,51 @@
+<header class="pm-header">
+    <button type="button" class="pm-sidebar-toggle" id="pmSidebarToggle" aria-label="Toggle navigation">
+        <i class="bi bi-list"></i>
+    </button>
+
+    <nav aria-label="breadcrumb" class="pm-breadcrumb">
+        <ol class="breadcrumb mb-0">
+            @if (ViewData["Breadcrumb"] is IEnumerable<(string Text, string? Url)> crumbs)
+            {
+                foreach (var crumb in crumbs)
+                {
+                    if (crumb.Url == null)
+                    {
+                        <li class="breadcrumb-item active" aria-current="page">@crumb.Text</li>
+                    }
+                    else
+                    {
+                        <li class="breadcrumb-item"><a href="@crumb.Url">@crumb.Text</a></li>
+                    }
+                }
+            }
+            else
+            {
+                <li class="breadcrumb-item active" aria-current="page">@(ViewData["Title"] ?? "Dashboard")</li>
+            }
+        </ol>
+    </nav>
+
+    <div class="pm-header-actions">
+        <div class="dropdown">
+            <button class="btn pm-notify-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-bell"></i>
+                <span class="pm-notify-dot d-none" id="notifyDot"></span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end pm-notify-menu">
+                <div class="pm-notify-empty">No new notifications</div>
+            </div>
+        </div>
+
+        <div class="dropdown">
+            <button class="btn pm-user-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="pm-user-avatar">@(User.GetDisplayName().Substring(0, 1).ToUpper())</span>
+                <span class="pm-user-name d-none d-md-inline">@User.GetDisplayName()</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><h6 class="dropdown-header mb-0">@User.GetDisplayName()</h6></li>
+                <li><span class="dropdown-item-text text-muted small">Signed in via Windows as @User.Identity?.Name</span></li>
+            </ul>
+        </div>
+    </div>
+</header>

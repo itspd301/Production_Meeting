@@ -1,0 +1,25 @@
+# Build outputs
+bin/
+obj/
+publish/
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Rider
+.idea/
+
+# Reference material from the legacy Mahindra_AD app used only for requirement
+# analysis - not part of this application and not ours to publish.
+docs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local secrets (if ever added)
+appsettings.*.local.json
+*.pfx

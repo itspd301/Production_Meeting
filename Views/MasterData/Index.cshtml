@@ -1,0 +1,291 @@
+@model MasterDataIndexViewModel
+@{
+    ViewData["Title"] = "Master Data";
+}
+
+<div class="pm-card">
+    <h5 class="mb-3">Master Data</h5>
+
+    <ul class="nav nav-tabs" id="masterTabs" role="tablist">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-plants" type="button">Plants</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-lines" type="button">Lines</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-shifts" type="button">Shifts</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-departments" type="button">Departments</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-models" type="button">Models</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-units" type="button">Units</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-indicators" type="button">Indicators</button></li>
+    </ul>
+
+    <div class="tab-content pt-3">
+        <div class="tab-pane fade show active" id="tab-plants">
+            <div class="d-flex justify-content-end mb-2">
+                <button class="btn btn-sm btn-primary" onclick="openMasterModal('Plant', null)"><i class="bi bi-plus-lg"></i> Add Plant</button>
+            </div>
+            <table class="table table-sm table-hover">
+                <thead class="table-light"><tr><th>Code</th><th>Name</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var r in Model.Plants)
+                    {
+                        <tr>
+                            <td>@r.Code</td><td>@r.Name</td>
+                            <td><span class="pm-badge-status @(r.IsActive ? "status-green" : "status-red")">@(r.IsActive ? "Active" : "Inactive")</span></td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-secondary" onclick='openMasterModal("Plant", @Html.Raw(Json.Serialize(r)))'><i class="bi bi-pencil-square"></i></button>
+                                <button class="btn btn-sm @(r.IsActive ? "btn-outline-danger" : "btn-outline-success")" onclick="toggleActive('Plant', @r.Id, @(r.IsActive ? "false" : "true"))"><i class="bi @(r.IsActive ? "bi-slash-circle" : "bi-check-circle")"></i></button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane fade" id="tab-lines">
+            <div class="d-flex justify-content-end mb-2">
+                <button class="btn btn-sm btn-primary" onclick="openMasterModal('Line', null)"><i class="bi bi-plus-lg"></i> Add Line</button>
+            </div>
+            <table class="table table-sm table-hover">
+                <thead class="table-light"><tr><th>Plant</th><th>Code</th><th>Name</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var r in Model.Lines)
+                    {
+                        <tr>
+                            <td>@r.PlantName</td><td>@r.Code</td><td>@r.Name</td>
+                            <td><span class="pm-badge-status @(r.IsActive ? "status-green" : "status-red")">@(r.IsActive ? "Active" : "Inactive")</span></td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-secondary" onclick='openMasterModal("Line", @Html.Raw(Json.Serialize(r)))'><i class="bi bi-pencil-square"></i></button>
+                                <button class="btn btn-sm @(r.IsActive ? "btn-outline-danger" : "btn-outline-success")" onclick="toggleActive('Line', @r.Id, @(r.IsActive ? "false" : "true"))"><i class="bi @(r.IsActive ? "bi-slash-circle" : "bi-check-circle")"></i></button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane fade" id="tab-shifts">
+            <div class="d-flex justify-content-end mb-2">
+                <button class="btn btn-sm btn-primary" onclick="openMasterModal('Shift', null)"><i class="bi bi-plus-lg"></i> Add Shift</button>
+            </div>
+            <table class="table table-sm table-hover">
+                <thead class="table-light"><tr><th>Name</th><th>Start</th><th>End</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var r in Model.Shifts)
+                    {
+                        <tr>
+                            <td>@r.Name</td><td>@r.StartTime</td><td>@r.EndTime</td>
+                            <td><span class="pm-badge-status @(r.IsActive ? "status-green" : "status-red")">@(r.IsActive ? "Active" : "Inactive")</span></td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-secondary" onclick='openMasterModal("Shift", @Html.Raw(Json.Serialize(r)))'><i class="bi bi-pencil-square"></i></button>
+                                <button class="btn btn-sm @(r.IsActive ? "btn-outline-danger" : "btn-outline-success")" onclick="toggleActive('Shift', @r.Id, @(r.IsActive ? "false" : "true"))"><i class="bi @(r.IsActive ? "bi-slash-circle" : "bi-check-circle")"></i></button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane fade" id="tab-departments">
+            <div class="d-flex justify-content-end mb-2">
+                <button class="btn btn-sm btn-primary" onclick="openMasterModal('Department', null)"><i class="bi bi-plus-lg"></i> Add Department</button>
+            </div>
+            <table class="table table-sm table-hover">
+                <thead class="table-light"><tr><th>Name</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var r in Model.Departments)
+                    {
+                        <tr>
+                            <td>@r.Name</td>
+                            <td><span class="pm-badge-status @(r.IsActive ? "status-green" : "status-red")">@(r.IsActive ? "Active" : "Inactive")</span></td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-secondary" onclick='openMasterModal("Department", @Html.Raw(Json.Serialize(r)))'><i class="bi bi-pencil-square"></i></button>
+                                <button class="btn btn-sm @(r.IsActive ? "btn-outline-danger" : "btn-outline-success")" onclick="toggleActive('Department', @r.Id, @(r.IsActive ? "false" : "true"))"><i class="bi @(r.IsActive ? "bi-slash-circle" : "bi-check-circle")"></i></button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane fade" id="tab-models">
+            <div class="d-flex justify-content-end mb-2">
+                <button class="btn btn-sm btn-primary" onclick="openMasterModal('Model', null)"><i class="bi bi-plus-lg"></i> Add Model</button>
+            </div>
+            <table class="table table-sm table-hover">
+                <thead class="table-light"><tr><th>Name</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var r in Model.Models)
+                    {
+                        <tr>
+                            <td>@r.Name</td>
+                            <td><span class="pm-badge-status @(r.IsActive ? "status-green" : "status-red")">@(r.IsActive ? "Active" : "Inactive")</span></td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-secondary" onclick='openMasterModal("Model", @Html.Raw(Json.Serialize(r)))'><i class="bi bi-pencil-square"></i></button>
+                                <button class="btn btn-sm @(r.IsActive ? "btn-outline-danger" : "btn-outline-success")" onclick="toggleActive('Model', @r.Id, @(r.IsActive ? "false" : "true"))"><i class="bi @(r.IsActive ? "bi-slash-circle" : "bi-check-circle")"></i></button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane fade" id="tab-units">
+            <div class="d-flex justify-content-end mb-2">
+                <button class="btn btn-sm btn-primary" onclick="openMasterModal('Unit', null)"><i class="bi bi-plus-lg"></i> Add Unit</button>
+            </div>
+            <table class="table table-sm table-hover">
+                <thead class="table-light"><tr><th>Name</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var r in Model.Units)
+                    {
+                        <tr>
+                            <td>@r.Name</td>
+                            <td><span class="pm-badge-status @(r.IsActive ? "status-green" : "status-red")">@(r.IsActive ? "Active" : "Inactive")</span></td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-secondary" onclick='openMasterModal("Unit", @Html.Raw(Json.Serialize(r)))'><i class="bi bi-pencil-square"></i></button>
+                                <button class="btn btn-sm @(r.IsActive ? "btn-outline-danger" : "btn-outline-success")" onclick="toggleActive('Unit', @r.Id, @(r.IsActive ? "false" : "true"))"><i class="bi @(r.IsActive ? "bi-slash-circle" : "bi-check-circle")"></i></button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="tab-pane fade" id="tab-indicators">
+            <p class="text-muted small">The SQCDPSMO indicator set is fixed by convention; edit names/codes with care.</p>
+            <div class="d-flex justify-content-end mb-2">
+                <button class="btn btn-sm btn-primary" onclick="openMasterModal('Indicator', null)"><i class="bi bi-plus-lg"></i> Add Indicator</button>
+            </div>
+            <table class="table table-sm table-hover">
+                <thead class="table-light"><tr><th>Code</th><th>Name</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var r in Model.Indicators)
+                    {
+                        <tr>
+                            <td>@r.Code</td><td>@r.Name</td>
+                            <td><span class="pm-badge-status @(r.IsActive ? "status-green" : "status-red")">@(r.IsActive ? "Active" : "Inactive")</span></td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-secondary" onclick='openMasterModal("Indicator", @Html.Raw(Json.Serialize(r)))'><i class="bi bi-pencil-square"></i></button>
+                                <button class="btn btn-sm @(r.IsActive ? "btn-outline-danger" : "btn-outline-success")" onclick="toggleActive('Indicator', @r.Id, @(r.IsActive ? "false" : "true"))"><i class="bi @(r.IsActive ? "bi-slash-circle" : "bi-check-circle")"></i></button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Shared Add/Edit modal -->
+<div class="modal fade" id="masterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="masterModalTitle">Add</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="mId" />
+                <input type="hidden" id="mType" />
+
+                <div class="mb-3" id="mCodeGroup">
+                    <label class="form-label">Code</label>
+                    <input type="text" id="mCode" class="form-control" />
+                </div>
+                <div class="mb-3" id="mPlantGroup">
+                    <label class="form-label">Plant</label>
+                    <select id="mPlantId" class="form-select">
+                        @foreach (var p in Model.PlantOptions)
+                        {
+                            <option value="@p.Id">@p.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Name</label>
+                    <input type="text" id="mName" class="form-control" />
+                </div>
+                <div class="row" id="mShiftGroup">
+                    <div class="col-6 mb-3">
+                        <label class="form-label">Start Time</label>
+                        <input type="time" id="mStartTime" class="form-control" />
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="form-label">End Time</label>
+                        <input type="time" id="mEndTime" class="form-control" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary" onclick="saveMaster()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var masterModal;
+        document.addEventListener('DOMContentLoaded', function () {
+            masterModal = new bootstrap.Modal(document.getElementById('masterModal'));
+        });
+
+        function openMasterModal(type, row) {
+            $('#mId').val(row ? row.id : '');
+            $('#mType').val(type);
+            $('#mCode').val(row ? row.code : '');
+            $('#mName').val(row ? row.name : '');
+            $('#mPlantId').val(row && row.plantId ? row.plantId : '');
+            $('#mStartTime').val(row ? row.startTime : '');
+            $('#mEndTime').val(row ? row.endTime : '');
+
+            $('#mCodeGroup').toggle(type === 'Plant' || type === 'Indicator');
+            $('#mPlantGroup').toggle(type === 'Line');
+            $('#mShiftGroup').toggle(type === 'Shift');
+
+            $('#masterModalTitle').text((row ? 'Edit ' : 'Add ') + type);
+            masterModal.show();
+        }
+
+        function saveMaster() {
+            var type = $('#mType').val();
+            var payload = {
+                id: $('#mId').val() || null,
+                code: $('#mCode').val(),
+                name: $('#mName').val(),
+                plantId: $('#mPlantId').val(),
+                startTime: $('#mStartTime').val(),
+                endTime: $('#mEndTime').val()
+            };
+
+            if (!payload.name) {
+                toastr.warning('Name is required.');
+                return;
+            }
+
+            $.post('@Url.Action("Index")'.replace('Index', 'Save' + type), payload, function (res) {
+                if (res.success) {
+                    toastr.success(res.message);
+                    masterModal.hide();
+                    setTimeout(function () { window.location.reload(); }, 700);
+                } else {
+                    toastr.error(res.message);
+                }
+            }).fail(function () {
+                toastr.error('Save failed.');
+            });
+        }
+
+        function toggleActive(type, id, newActive) {
+            pmConfirm('Are you sure?', function () {
+                $.post('@Url.Action("SetActive")', { type: type, id: id, isActive: newActive }, function (res) {
+                    if (res.success) {
+                        toastr.success(res.message);
+                        setTimeout(function () { window.location.reload(); }, 700);
+                    } else {
+                        toastr.error(res.message);
+                    }
+                });
+            });
+        }
+    </script>
+}

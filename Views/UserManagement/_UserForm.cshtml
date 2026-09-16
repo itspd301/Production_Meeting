@@ -1,0 +1,97 @@
+@model UserFormViewModel
+@{
+    var isEdit = !string.IsNullOrEmpty(Model.Id);
+}
+
+<input type="hidden" asp-for="Id" />
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <label asp-for="UserName" class="form-label"></label>
+        @if (isEdit)
+        {
+            <input asp-for="UserName" class="form-control" placeholder="DOMAIN\username" readonly />
+        }
+        else
+        {
+            <input asp-for="UserName" class="form-control" placeholder="DOMAIN\username" />
+        }
+        <span asp-validation-for="UserName" class="text-danger small"></span>
+        <div class="form-text">The Windows account this person signs in with (e.g. CONTOSO\jdoe).</div>
+    </div>
+
+    <div class="col-md-6">
+        <label asp-for="FullName" class="form-label"></label>
+        <input asp-for="FullName" class="form-control" />
+        <span asp-validation-for="FullName" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-6">
+        <label asp-for="Role" class="form-label"></label>
+        <select asp-for="Role" class="form-select">
+            @foreach (var role in Model.AvailableRoles)
+            {
+                <option value="@role" selected="@(Model.Role == role)">@role</option>
+            }
+        </select>
+        <span asp-validation-for="Role" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-6 d-flex align-items-end">
+        <div class="form-check">
+            <input asp-for="IsActive" class="form-check-input" />
+            <label asp-for="IsActive" class="form-check-label"></label>
+        </div>
+    </div>
+</div>
+
+<hr class="my-4" />
+
+<div id="accessSection">
+    <h6 class="mb-2">Plant / Line Access</h6>
+    <p class="text-muted small">Not needed for Admins (they always have full access). For other roles, grant one or more plants - leave line as "All Lines" for full-plant access.</p>
+
+    <div class="row g-2 align-items-end mb-3">
+        <div class="col-sm-5">
+            <select id="accessPlantSelect" class="form-select form-select-sm">
+                <option value="">-- Select Plant --</option>
+                @foreach (var p in Model.AvailablePlants)
+                {
+                    <option value="@p.Id">@p.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-sm-5">
+            <select id="accessLineSelect" class="form-select form-select-sm" disabled>
+                <option value="">All Lines</option>
+            </select>
+        </div>
+        <div class="col-sm-2">
+            <button type="button" id="btnAddAccess" class="btn btn-outline-primary btn-sm w-100">
+                <i class="bi bi-plus-lg"></i> Add
+            </button>
+        </div>
+    </div>
+
+    <table class="table table-sm table-bordered" id="accessTable">
+        <thead class="table-light">
+            <tr><th>Plant</th><th>Line</th><th style="width:60px;"></th></tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <div id="accessInputs"></div>
+</div>
+
+<div class="d-flex justify-content-end gap-2 mt-4">
+    <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary">Save</button>
+</div>
+
+@*
+    NOTE: this partial's markup gets included inside Create.cshtml / Edit.cshtml, which are
+    themselves responsible for emitting the @section Scripts block below (a partial view
+    cannot define its own @section - see PM_USER_FORM_INIT usage in each of those views).
+*@
+<script id="pmUserFormData" type="application/json">
+    @Html.Raw(Json.Serialize(Model.PlantAccess.Select(a => new { plantId = a.PlantId, plantName = a.PlantName, lineId = a.LineId, lineName = a.LineName })))
+</script>

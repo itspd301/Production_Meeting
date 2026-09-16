@@ -1,0 +1,88 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="row g-3 mb-3">
+    <div class="col-sm-6 col-xl-3">
+        <div class="pm-stat-card">
+            <div class="pm-stat-icon" style="background:var(--pm-accent);"><i class="bi bi-building"></i></div>
+            <div>
+                <div class="pm-stat-value">@Model.TotalPlants</div>
+                <div class="pm-stat-label">Active Plants</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="pm-stat-card">
+            <div class="pm-stat-icon" style="background:#5b6b7c;"><i class="bi bi-diagram-3"></i></div>
+            <div>
+                <div class="pm-stat-value">@Model.TotalLines</div>
+                <div class="pm-stat-label">Active Lines</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="pm-stat-card">
+            <div class="pm-stat-icon" style="background:var(--pm-status-green);"><i class="bi bi-card-checklist"></i></div>
+            <div>
+                <div class="pm-stat-value">@Model.TotalActiveKpis</div>
+                <div class="pm-stat-label">Active KPIs</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="pm-stat-card">
+            <div class="pm-stat-icon" style="background:var(--pm-status-amber);"><i class="bi bi-calendar-check"></i></div>
+            <div>
+                <div class="pm-stat-value">@Model.TodaySessionsCount</div>
+                <div class="pm-stat-label">Today's Meetings</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="pm-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Recent Production Meetings</h5>
+        <a asp-controller="ProductionMeeting" asp-action="Index" class="btn btn-sm btn-outline-primary">View All</a>
+    </div>
+
+    @if (Model.RecentSessions.Count == 0)
+    {
+        <p class="text-muted mb-0">No production meetings recorded yet.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Plant</th>
+                        <th>Line</th>
+                        <th>Conducted By</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model.RecentSessions)
+                    {
+                        <tr>
+                            <td>@s.MeetingDate.ToString("dd-MMM-yyyy")</td>
+                            <td>@s.PlantName</td>
+                            <td>@s.LineName</td>
+                            <td>@s.ConductedByName</td>
+                            <td>
+                                @{
+                                    var badgeClass = s.Status == "Completed" ? "status-green" : "status-amber";
+                                }
+                                <span class="pm-badge-status @badgeClass">@s.Status</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
