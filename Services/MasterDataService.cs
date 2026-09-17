@@ -78,13 +78,13 @@ public class MasterDataService : IMasterDataService
     {
         if (await _db.ProductionLines.AnyAsync(l => l.LineId != id && l.PlantId == plantId && l.Code == code, cancellationToken))
         {
-            return ServiceResult.Fail("A line with this code already exists for this plant.");
+            return ServiceResult.Fail("A shop with this code already exists for this plant.");
         }
 
         if (id.HasValue)
         {
             var line = await _db.ProductionLines.FirstOrDefaultAsync(l => l.LineId == id, cancellationToken);
-            if (line == null) return ServiceResult.Fail("Line not found.");
+            if (line == null) return ServiceResult.Fail("Shop not found.");
             line.PlantId = plantId;
             line.Code = code;
             line.Name = name;
@@ -97,7 +97,7 @@ public class MasterDataService : IMasterDataService
         }
 
         await _db.SaveChangesAsync(cancellationToken);
-        return ServiceResult.Ok("Line saved successfully.");
+        return ServiceResult.Ok("Shop saved successfully.");
     }
 
     public async Task<ServiceResult> SaveShiftAsync(int? id, string name, TimeSpan? start, TimeSpan? end, string userId, CancellationToken cancellationToken = default)
