@@ -1,3 +1,5 @@
+using ProductionMeeting.Helpers;
+
 namespace ProductionMeeting.ViewModels.ProductionMeeting;
 
 public class MeetingIndexViewModel
@@ -11,10 +13,9 @@ public class MeetingIndexViewModel
     // Dropdown sources
     public List<(int Id, string Name)> Plants { get; set; } = new();
     public List<(int Id, string Name)> Lines { get; set; } = new();
-    public List<(int Id, string Name)> Shifts { get; set; } = new();
 
     // Quick-start new entry defaults
-    public DateTime NewEntryDate { get; set; } = DateTime.Today;
+    public string NewEntryWeek { get; set; } = PmDates.ToWeekInputValue(DateTime.Today);
 
     public List<MeetingListItemViewModel> Sessions { get; set; } = new();
 

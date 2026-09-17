@@ -3,86 +3,198 @@
     ViewData["Title"] = "Dashboard";
 }
 
-<div class="row g-3 mb-3">
-    <div class="col-sm-6 col-xl-3">
-        <div class="pm-stat-card">
-            <div class="pm-stat-icon" style="background:var(--pm-accent);"><i class="bi bi-building"></i></div>
-            <div>
-                <div class="pm-stat-value">@Model.TotalPlants</div>
-                <div class="pm-stat-label">Active Plants</div>
-            </div>
+<div class="pm-card mb-3">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-sm-4 col-md-3">
+            <label class="form-label">Plant</label>
+            <select name="plantId" class="form-select" onchange="this.form.submit()">
+                @foreach (var p in Model.Plants)
+                {
+                    <option value="@p.Id" selected="@(Model.PlantId == p.Id)">@p.Name</option>
+                }
+            </select>
         </div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="pm-stat-card">
-            <div class="pm-stat-icon" style="background:#5b6b7c;"><i class="bi bi-diagram-3"></i></div>
-            <div>
-                <div class="pm-stat-value">@Model.TotalLines</div>
-                <div class="pm-stat-label">Active Lines</div>
-            </div>
+        <div class="col-sm-4 col-md-3">
+            <label class="form-label">Shop</label>
+            <select name="lineId" class="form-select" onchange="this.form.submit()">
+                @foreach (var l in Model.Lines)
+                {
+                    <option value="@l.Id" selected="@(Model.LineId == l.Id)">@l.Name</option>
+                }
+            </select>
         </div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="pm-stat-card">
-            <div class="pm-stat-icon" style="background:var(--pm-status-green);"><i class="bi bi-card-checklist"></i></div>
-            <div>
-                <div class="pm-stat-value">@Model.TotalActiveKpis</div>
-                <div class="pm-stat-label">Active KPIs</div>
-            </div>
+        <div class="col-sm-4 col-md-3">
+            <label class="form-label">Week</label>
+            <input type="week" name="week" class="form-control" value="@Model.Week" onchange="this.form.submit()" />
         </div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="pm-stat-card">
-            <div class="pm-stat-icon" style="background:var(--pm-status-amber);"><i class="bi bi-calendar-check"></i></div>
-            <div>
-                <div class="pm-stat-value">@Model.TodaySessionsCount</div>
-                <div class="pm-stat-label">Today's Meetings</div>
-            </div>
+        <div class="col-sm-6 col-md-3">
+            <span class="text-muted small">@PmDates.WeekLabel(Model.WeekStart)</span>
         </div>
-    </div>
+    </form>
 </div>
 
-<div class="pm-card">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0">Recent Production Meetings</h5>
-        <a asp-controller="ProductionMeeting" asp-action="Index" class="btn btn-sm btn-outline-primary">View All</a>
+@if (!Model.HasPlantAndShop)
+{
+    <div class="pm-card">
+        <p class="text-muted mb-0">No plant/shop available. Ask an administrator to grant you access under User Management.</p>
+    </div>
+}
+else
+{
+    <div class="cards mb-3">
+        @foreach (var c in Model.Cards)
+        {
+            <article class="pm-dash-card">
+                <small>@c.Label</small>
+                <strong class="@c.Status">@c.ValueDisplay</strong>
+                @if (c.SubText != null)
+                {
+                    <span class="pm-dash-card-sub">@c.SubText</span>
+                }
+            </article>
+        }
     </div>
 
-    @if (Model.RecentSessions.Count == 0)
-    {
-        <p class="text-muted mb-0">No production meetings recorded yet.</p>
-    }
-    else
-    {
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Date</th>
-                        <th>Plant</th>
-                        <th>Line</th>
-                        <th>Conducted By</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var s in Model.RecentSessions)
-                    {
+    <div class="pm-dash-layout">
+        <section class="pm-card">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">Shop KPI Performance</h6>
+                <span class="text-muted small" id="dashRowCount">@Model.Rows.Count indicators</span>
+            </div>
+
+            <div class="pm-dash-tabs mb-2">
+                <button class="btn btn-sm btn-outline-secondary active" data-cat="All">All</button>
+                @foreach (var cat in Model.Categories)
+                {
+                    <button class="btn btn-sm btn-outline-secondary" data-cat="@cat.Code">@cat.Name</button>
+                }
+                <input type="text" id="dashSearch" class="form-control form-control-sm ms-auto" style="max-width:220px;" placeholder="Search indicator..." />
+            </div>
+
+            <div class="table-responsive" style="max-height:520px;">
+                <table class="table table-sm table-hover align-middle mb-0" id="dashTable">
+                    <thead class="table-light">
                         <tr>
-                            <td>@s.MeetingDate.ToString("dd-MMM-yyyy")</td>
-                            <td>@s.PlantName</td>
-                            <td>@s.LineName</td>
-                            <td>@s.ConductedByName</td>
-                            <td>
-                                @{
-                                    var badgeClass = s.Status == "Completed" ? "status-green" : "status-amber";
-                                }
-                                <span class="pm-badge-status @badgeClass">@s.Status</span>
-                            </td>
+                            <th>Category</th>
+                            <th>Indicator</th>
+                            <th>Unit</th>
+                            <th>Source</th>
+                            <th>Target</th>
+                            <th>Week</th>
+                            <th>Variance</th>
+                            <th>Month</th>
+                            <th>YTD</th>
+                            <th>Status</th>
+                            <th>Remarks</th>
                         </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Rows.Count == 0)
+                        {
+                            <tr><td colspan="11" class="text-center text-muted">No active KPIs configured for this shop.</td></tr>
+                        }
+                        @foreach (var r in Model.Rows)
+                        {
+                            <tr data-cat="@r.IndicatorCode" data-name="@r.Description.ToLower()">
+                                <td><span class="pm-indicator-cell pm-ind-@r.IndicatorCode d-inline-block px-2 py-1 rounded">@r.IndicatorCode</span></td>
+                                <td>@r.Description</td>
+                                <td>@r.UnitName</td>
+                                <td>
+                                    @{
+                                        var srcClass = r.Source == KpiSources.StoredProcedure ? "pm-source-sp" : r.Source == KpiSources.Calculated ? "pm-source-calculated" : "pm-source-manual";
+                                    }
+                                    <span class="pm-source-tag @srcClass">@r.Source</span>
+                                </td>
+                                <td>@(r.Target?.ToString() ?? "-")</td>
+                                <td><b>@(r.WeekValue?.ToString() ?? "-")</b></td>
+                                <td>@(r.Variance?.ToString() ?? "-")</td>
+                                <td>@(r.MonthCumValue?.ToString() ?? "-")</td>
+                                <td>@(r.YtdValue?.ToString() ?? "-")</td>
+                                <td>
+                                    @{
+                                        var statusClass = r.Status switch { "Green" => "status-green", "Amber" => "status-amber", "Red" => "status-red", _ => "status-neutral" };
+                                        var statusLabel = r.Status == "NoTarget" ? "No Target" : r.Status;
+                                    }
+                                    <span class="pm-badge-status @statusClass">@statusLabel</span>
+                                </td>
+                                <td class="text-truncate" style="max-width:180px;" title="@r.Remarks">@r.Remarks</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <aside class="pm-dash-side">
+            <section class="pm-card">
+                <h6 class="mb-3">Data Readiness</h6>
+                @{
+                    var pct = Model.TotalCount > 0 ? (int)Math.Round(Model.EnteredCount * 100.0 / Model.TotalCount) : 0;
+                }
+                <div class="pm-donut" style="background: conic-gradient(var(--pm-status-green) 0 @(pct)%, #dfe5ec @(pct)% 100%);">
+                    <div class="pm-donut-inner">@pct%<br /><small>Complete</small></div>
+                </div>
+                <div class="pm-dash-item">Entered <b class="float-end text-success">@Model.EnteredCount</b></div>
+                <div class="pm-dash-item">Pending <b class="float-end text-warning">@(Model.TotalCount - Model.EnteredCount)</b></div>
+            </section>
+
+            <section class="pm-card">
+                <h6 class="mb-3">Attention Required</h6>
+                @if (Model.AttentionRequired.Count == 0)
+                {
+                    <p class="text-muted small mb-0">No red-status KPIs this week.</p>
+                }
+                else
+                {
+                    @foreach (var r in Model.AttentionRequired)
+                    {
+                        <div class="pm-dash-item">
+                            <b class="text-danger">@r.Description</b><br />
+                            <small class="text-muted">@r.WeekValue against target @r.Target</small>
+                        </div>
                     }
-                </tbody>
-            </table>
-        </div>
-    }
-</div>
+                }
+            </section>
+
+            @if (Model.SessionId.HasValue)
+            {
+                <a asp-controller="ProductionMeeting" asp-action="Details" asp-route-id="@Model.SessionId" class="btn btn-outline-primary btn-sm w-100">
+                    <i class="bi bi-clipboard-data"></i> View Full Meeting Record
+                </a>
+            }
+            else if (User.IsInRole(Roles.Admin) || User.IsInRole(Roles.Manager) || User.IsInRole(Roles.ProductionUser))
+            {
+                <a asp-controller="ProductionMeeting" asp-action="Entry" asp-route-plantId="@Model.PlantId" asp-route-lineId="@Model.LineId" asp-route-week="@Model.Week" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-play-circle"></i> Start This Week's Meeting
+                </a>
+            }
+        </aside>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        var activeCat = 'All';
+
+        function applyDashFilter() {
+            var q = ($('#dashSearch').val() || '').toLowerCase();
+            var visible = 0;
+            $('#dashTable tbody tr[data-cat]').each(function () {
+                var $row = $(this);
+                var matches = (activeCat === 'All' || $row.data('cat') === activeCat) && $row.data('name').indexOf(q) !== -1;
+                $row.toggle(matches);
+                if (matches) visible++;
+            });
+            $('#dashRowCount').text(visible + ' indicators');
+        }
+
+        $('.pm-dash-tabs button').on('click', function () {
+            $('.pm-dash-tabs button').removeClass('active');
+            $(this).addClass('active');
+            activeCat = $(this).data('cat');
+            applyDashFilter();
+        });
+
+        $('#dashSearch').on('input', applyDashFilter);
+    </script>
+}

@@ -22,7 +22,7 @@
         $('#formPlantId').on('change', function () {
             var plantId = $(this).val();
             var $line = $('#formLineId');
-            $line.html('<option value="">-- Select Line --</option>');
+            $line.html('<option value="">-- Select Shop --</option>');
             if (!plantId) return;
 
             $.get('@Url.Action("GetLinesForPlant")', { plantId: plantId }, function (data) {

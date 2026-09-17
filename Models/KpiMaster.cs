@@ -19,4 +19,13 @@ public class KpiMaster : AuditableEntity
 
     public string Description { get; set; } = null!;
     public int DisplayOrder { get; set; }
+
+    // Where the weekly value comes from. "SP" = populated externally by the plant's own
+    // stored procedure straight into KpiTransactions - not entered through the meeting grid.
+    public string? Source { get; set; }
+
+    // True for KPIs where a smaller number is the good outcome (defects, cost, incidents),
+    // false where bigger is better (schedule adherence, straight pass ratio). Drives the
+    // Green/Amber/Red status shown on the dashboard.
+    public bool LowerIsBetter { get; set; }
 }

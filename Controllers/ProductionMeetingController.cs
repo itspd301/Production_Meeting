@@ -43,10 +43,13 @@ public class ProductionMeetingController : Controller
 
     [Authorize(Policy = PolicyNames.RequireProductionUserOrAbove)]
     [HttpGet]
-    public async Task<IActionResult> Entry(int plantId, int lineId, int? shiftId, DateTime? meetingDate, CancellationToken cancellationToken)
+    public async Task<IActionResult> Entry(int plantId, int lineId, string? week, DateTime? meetingDate, CancellationToken cancellationToken)
     {
-        var date = meetingDate ?? DateTime.Today;
-        var vm = await _meetingService.GetOrCreateEntryAsync(plantId, lineId, shiftId, date, CurrentUserId, IsAdmin, cancellationToken);
+        // Meetings run weekly: "week" (yyyy-Www, from the <input type="week"> picker) always
+        // wins when present; meetingDate stays supported for direct links such as "Continue
+        // Entry" from the Details page, which already knows the session's stored date.
+        var date = PmDates.FromWeekInputValue(week) ?? meetingDate ?? DateTime.Today;
+        var vm = await _meetingService.GetOrCreateEntryAsync(plantId, lineId, null, date, CurrentUserId, IsAdmin, cancellationToken);
 
         if (vm == null)
         {

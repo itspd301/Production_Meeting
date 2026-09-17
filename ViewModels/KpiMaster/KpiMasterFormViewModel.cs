@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ProductionMeeting.Helpers;
 
 namespace ProductionMeeting.ViewModels.KpiMaster;
 
@@ -10,8 +11,8 @@ public class KpiMasterFormViewModel
     [Display(Name = "Plant")]
     public int PlantId { get; set; }
 
-    [Required(ErrorMessage = "Line is required")]
-    [Display(Name = "Line")]
+    [Required(ErrorMessage = "Shop is required")]
+    [Display(Name = "Shop")]
     public int LineId { get; set; }
 
     [Required(ErrorMessage = "Indicator is required")]
@@ -32,6 +33,12 @@ public class KpiMasterFormViewModel
     public int DisplayOrder { get; set; }
 
     public bool IsActive { get; set; } = true;
+
+    [Display(Name = "Source")]
+    public string Source { get; set; } = KpiSources.Manual;
+
+    [Display(Name = "Lower value is better")]
+    public bool LowerIsBetter { get; set; }
 
     public List<(int Id, string Name)> Plants { get; set; } = new();
     public List<(int Id, string Name)> Lines { get; set; } = new();

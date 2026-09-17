@@ -18,7 +18,7 @@
     <div class="col-md-6">
         <label asp-for="LineId" class="form-label"></label>
         <select asp-for="LineId" id="formLineId" class="form-select">
-            <option value="">-- Select Line --</option>
+            <option value="">-- Select Shop --</option>
             @foreach (var l in Model.Lines)
             {
                 <option value="@l.Id" selected="@(Model.LineId == l.Id)">@l.Name</option>
@@ -67,6 +67,27 @@
         <div class="form-check">
             <input asp-for="IsActive" class="form-check-input" />
             <label asp-for="IsActive" class="form-check-label"></label>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <label asp-for="Source" class="form-label"></label>
+        <select asp-for="Source" class="form-select">
+            @foreach (var s in KpiSources.All)
+            {
+                <option value="@s" selected="@(Model.Source == s)">@s</option>
+            }
+        </select>
+        <div class="form-text">
+            "SP" means the value is populated directly into the database by the plant's own
+            stored procedure - the meeting entry grid will show it read-only.
+        </div>
+    </div>
+
+    <div class="col-md-6 d-flex align-items-end">
+        <div class="form-check">
+            <input asp-for="LowerIsBetter" class="form-check-input" />
+            <label asp-for="LowerIsBetter" class="form-check-label"></label>
         </div>
     </div>
 </div>

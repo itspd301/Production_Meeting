@@ -28,7 +28,7 @@
         </div>
         <div class="col-sm-6 col-md-3">
             <select name="lineId" class="form-select" onchange="this.form.submit()">
-                <option value="">All Lines</option>
+                <option value="">All Shops</option>
                 @foreach (var l in Model.Lines)
                 {
                     <option value="@l.Id" selected="@(Model.LineId == l.Id)">@l.Name</option>
@@ -48,11 +48,12 @@
             <thead class="table-light">
                 <tr>
                     <th>Plant</th>
-                    <th>Line</th>
+                    <th>Shop</th>
                     <th>Indicator</th>
                     <th>Unit</th>
                     <th>Description</th>
                     <th>Order</th>
+                    <th>Source</th>
                     <th>Status</th>
                     <th></th>
                 </tr>
@@ -60,7 +61,7 @@
             <tbody>
                 @if (Model.Items.Count == 0)
                 {
-                    <tr><td colspan="8" class="text-center text-muted">No KPIs found.</td></tr>
+                    <tr><td colspan="9" class="text-center text-muted">No KPIs found.</td></tr>
                 }
                 @foreach (var k in Model.Items)
                 {
@@ -71,6 +72,12 @@
                         <td>@k.UnitName</td>
                         <td>@k.Description</td>
                         <td>@k.DisplayOrder</td>
+                        <td>
+                            @{
+                                var sourceClass = k.Source == KpiSources.StoredProcedure ? "pm-source-sp" : k.Source == KpiSources.Calculated ? "pm-source-calculated" : "pm-source-manual";
+                            }
+                            <span class="pm-source-tag @sourceClass">@(k.Source ?? KpiSources.Manual)</span>
+                        </td>
                         <td><span class="pm-badge-status @(k.IsActive ? "status-green" : "status-red")">@(k.IsActive ? "Active" : "Inactive")</span></td>
                         <td class="text-end">
                             <a asp-action="Edit" asp-route-id="@k.KpiId" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil-square"></i></a>

@@ -281,6 +281,117 @@ body {
 .pm-ind-M    { background: rgba(201, 138, 31, 0.14); color: #c98a1f; }
 .pm-ind-O    { background: rgba(107, 119, 133, 0.16); color: #465364; }
 
+/* ---------- KPI source tags (Manual / Calculated / SP) ---------- */
+.pm-source-tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.pm-source-manual     { background: #fff1d8; color: #b66900; }
+.pm-source-calculated { background: #eee7ff; color: #7254c6; }
+.pm-source-sp         { background: #e4f6ef; color: #0b8d61; }
+
+.pm-badge-status.status-neutral { background: rgba(107, 119, 133, 0.12); color: var(--pm-text-muted); }
+
+/* ---------- Dashboard ---------- */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.pm-dash-card {
+  background: #fff;
+  border: 1px solid var(--pm-border);
+  border-radius: 0.6rem;
+  padding: 14px;
+  box-shadow: 0 2px 8px rgba(21, 35, 59, 0.05);
+}
+
+.pm-dash-card small {
+  color: var(--pm-text-muted);
+  font-size: 0.75rem;
+}
+
+.pm-dash-card strong {
+  display: block;
+  font-size: 1.5rem;
+  margin: 6px 0 2px;
+}
+
+.pm-dash-card strong.good { color: var(--pm-status-green); }
+.pm-dash-card strong.bad  { color: var(--pm-status-red); }
+.pm-dash-card strong.warn { color: var(--pm-status-amber); }
+.pm-dash-card strong.neutral { color: #15233b; }
+
+.pm-dash-card-sub {
+  font-size: 0.75rem;
+  color: var(--pm-text-muted);
+}
+
+.pm-dash-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 14px;
+  margin-top: 14px;
+  align-items: start;
+}
+
+.pm-dash-side {
+  display: grid;
+  gap: 14px;
+}
+
+.pm-dash-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.pm-dash-item {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--pm-border);
+  font-size: 0.85rem;
+}
+
+.pm-dash-item:last-child {
+  border-bottom: none;
+}
+
+.pm-donut {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin: 10px auto 16px;
+  display: grid;
+  place-items: center;
+}
+
+.pm-donut-inner {
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+@media (max-width: 991.98px) {
+  .pm-dash-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---------- Loader ---------- */
 .pm-loader {
   position: fixed;

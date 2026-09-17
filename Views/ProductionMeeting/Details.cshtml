@@ -9,14 +9,14 @@
         <div>
             <h5 class="mb-1">@Model.PlantName &raquo; @Model.LineName</h5>
             <div class="text-muted small">
-                @Model.MeetingDate.ToString("dd-MMM-yyyy")
+                @PmDates.WeekLabel(Model.MeetingDate)
                 <span class="pm-badge-status @(Model.Status == "Completed" ? "status-green" : "status-amber") ms-2">@Model.Status</span>
             </div>
         </div>
         <div>
             @if (Model.Status != "Completed" && (User.IsInRole(Roles.Admin) || User.IsInRole(Roles.Manager) || User.IsInRole(Roles.ProductionUser)))
             {
-                <a asp-action="Entry" asp-route-plantId="@Model.PlantId" asp-route-lineId="@Model.LineId" asp-route-shiftId="@Model.ShiftId" asp-route-meetingDate="@Model.MeetingDate.ToString("yyyy-MM-dd")" class="btn btn-primary btn-sm">
+                <a asp-action="Entry" asp-route-plantId="@Model.PlantId" asp-route-lineId="@Model.LineId" asp-route-meetingDate="@Model.MeetingDate.ToString("yyyy-MM-dd")" class="btn btn-primary btn-sm">
                     <i class="bi bi-pencil-square"></i> Continue Entry
                 </a>
             }
@@ -55,7 +55,13 @@
                                     @group.IndicatorCode
                                 </td>
                             }
-                            <td>@row.Description</td>
+                            <td>
+                                @row.Description
+                                @if (row.IsReadOnlySource)
+                                {
+                                    <span class="pm-source-tag pm-source-sp" title="Populated automatically via stored procedure">SP</span>
+                                }
+                            </td>
                             <td>@row.UnitName</td>
                             <td>@row.F26Value</td>
                             <td>@row.F27Value</td>

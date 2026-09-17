@@ -20,7 +20,6 @@ public class MasterDataIndexViewModel
 {
     public List<MasterRow> Plants { get; set; } = new();
     public List<MasterRow> Lines { get; set; } = new();
-    public List<MasterRow> Shifts { get; set; } = new();
     public List<MasterRow> Departments { get; set; } = new();
     public List<MasterRow> Models { get; set; } = new();
     public List<MasterRow> Units { get; set; } = new();

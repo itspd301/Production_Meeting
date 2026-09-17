@@ -11,7 +11,7 @@ function initUserAccessForm(getLinesUrl) {
             $body.append(
                 '<tr>' +
                     '<td>' + row.plantName + '</td>' +
-                    '<td>' + (row.lineName || 'All Lines') + '</td>' +
+                    '<td>' + (row.lineName || 'All Shops') + '</td>' +
                     '<td><button type="button" class="btn btn-sm btn-outline-danger pm-remove-access" data-index="' + i + '"><i class="bi bi-x-lg"></i></button></td>' +
                 '</tr>'
             );
@@ -30,7 +30,7 @@ function initUserAccessForm(getLinesUrl) {
     $('#accessPlantSelect').on('change', function () {
         var plantId = $(this).val();
         var $line = $('#accessLineSelect');
-        $line.prop('disabled', true).html('<option value="">All Lines</option>');
+        $line.prop('disabled', true).html('<option value="">All Shops</option>');
 
         if (!plantId) return;
 

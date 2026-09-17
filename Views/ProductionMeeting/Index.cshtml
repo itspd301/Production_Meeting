@@ -20,26 +20,16 @@
                 </select>
             </div>
             <div class="col-sm-6 col-md-3">
-                <label class="form-label">Line</label>
+                <label class="form-label">Shop</label>
                 <select name="lineId" id="startLineId" class="form-select" required disabled>
                     <option value="">-- Select Plant First --</option>
                 </select>
             </div>
-            <div class="col-sm-6 col-md-2">
-                <label class="form-label">Shift <small class="text-muted">(optional)</small></label>
-                <select name="shiftId" class="form-select">
-                    <option value="">-- Any --</option>
-                    @foreach (var s in Model.Shifts)
-                    {
-                        <option value="@s.Id">@s.Name</option>
-                    }
-                </select>
+            <div class="col-sm-6 col-md-3">
+                <label class="form-label">Week</label>
+                <input type="week" name="week" class="form-control" value="@Model.NewEntryWeek" required />
             </div>
-            <div class="col-sm-6 col-md-2">
-                <label class="form-label">Date</label>
-                <input type="date" name="meetingDate" class="form-control" value="@Model.NewEntryDate.ToString("yyyy-MM-dd")" required />
-            </div>
-            <div class="col-sm-6 col-md-2">
+            <div class="col-sm-6 col-md-3">
                 <button type="submit" class="btn btn-primary w-100">
                     <i class="bi bi-play-circle"></i> Open Entry
                 </button>
@@ -83,10 +73,9 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Date</th>
+                        <th>Week</th>
                         <th>Plant</th>
-                        <th>Line</th>
-                        <th>Shift</th>
+                        <th>Shop</th>
                         <th>Conducted By</th>
                         <th>Progress</th>
                         <th>Status</th>
@@ -97,10 +86,9 @@
                     @foreach (var s in Model.Sessions)
                     {
                         <tr>
-                            <td>@s.MeetingDate.ToString("dd-MMM-yyyy")</td>
+                            <td>@PmDates.WeekLabel(s.MeetingDate)</td>
                             <td>@s.PlantName</td>
                             <td>@s.LineName</td>
-                            <td>@(s.ShiftName ?? "-")</td>
                             <td>@s.ConductedByName</td>
                             <td>@s.EnteredCount / @s.KpiCount KPIs</td>
                             <td>
@@ -149,13 +137,13 @@
                 }
 
                 $.get('@Url.Action("GetLines")', { plantId: plantId }, function (data) {
-                    var options = '<option value="">-- Select Line --</option>';
+                    var options = '<option value="">-- Select Shop --</option>';
                     data.forEach(function (l) {
                         options += '<option value="' + l.lineId + '">' + l.name + '</option>';
                     });
                     $line.html(options).prop('disabled', false);
                 }).fail(function () {
-                    $line.html('<option value="">Failed to load lines</option>');
+                    $line.html('<option value="">Failed to load shops</option>');
                 });
             });
         });

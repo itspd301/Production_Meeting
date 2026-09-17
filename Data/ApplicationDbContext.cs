@@ -62,8 +62,10 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             .HasOne(s => s.Shift).WithMany().HasForeignKey(s => s.ShiftId).OnDelete(DeleteBehavior.Restrict);
         builder.Entity<MeetingSession>()
             .HasOne(s => s.ConductedBy).WithMany().HasForeignKey(s => s.ConductedByUserId).OnDelete(DeleteBehavior.Restrict);
+        // Shift is no longer collected in the meeting flow, so uniqueness is one session per
+        // plant/shop/week (MeetingDate is always normalized to that week's Monday).
         builder.Entity<MeetingSession>()
-            .HasIndex(s => new { s.PlantId, s.LineId, s.ShiftId, s.MeetingDate }).IsUnique();
+            .HasIndex(s => new { s.PlantId, s.LineId, s.MeetingDate }).IsUnique();
 
         builder.Entity<KpiTransaction>()
             .HasOne(t => t.Session).WithMany(s => s.Transactions)

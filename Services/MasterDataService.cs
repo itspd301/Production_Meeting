@@ -26,17 +26,6 @@ public class MasterDataService : IMasterDataService
                 .Select(l => new MasterRow { Id = l.LineId, Code = l.Code, Name = l.Name, IsActive = l.IsActive, PlantId = l.PlantId, PlantName = l.Plant.Name })
                 .ToListAsync(cancellationToken),
 
-            Shifts = await _db.Shifts.OrderBy(s => s.Name)
-                .Select(s => new MasterRow
-                {
-                    Id = s.ShiftId,
-                    Name = s.Name,
-                    IsActive = s.IsActive,
-                    StartTime = s.StartTime.HasValue ? s.StartTime.Value.ToString(@"hh\:mm") : null,
-                    EndTime = s.EndTime.HasValue ? s.EndTime.Value.ToString(@"hh\:mm") : null
-                })
-                .ToListAsync(cancellationToken),
-
             Departments = await _db.Departments.OrderBy(d => d.Name)
                 .Select(d => new MasterRow { Id = d.DepartmentId, Name = d.Name, IsActive = d.IsActive })
                 .ToListAsync(cancellationToken),

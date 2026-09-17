@@ -6,6 +6,8 @@ public class KpiEntryRowViewModel
     public string Description { get; set; } = null!;
     public string UnitName { get; set; } = null!;
     public int DisplayOrder { get; set; }
+    public string? Source { get; set; }
+    public bool IsReadOnlySource => Source == Helpers.KpiSources.StoredProcedure;
 
     public int? TransactionId { get; set; }
     public int? ModelId { get; set; }

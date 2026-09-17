@@ -8,7 +8,7 @@
         <div>
             <h5 class="mb-1">@Model.PlantName &raquo; @Model.LineName</h5>
             <div class="text-muted small">
-                @Model.MeetingDate.ToString("dd-MMM-yyyy")
+                @PmDates.WeekLabel(Model.MeetingDate)
                 <span class="pm-badge-status @(Model.Status == "Completed" ? "status-green" : "status-amber") ms-2">@Model.Status</span>
             </div>
         </div>
@@ -44,17 +44,24 @@
                     for (var i = 0; i < group.Rows.Count; i++)
                     {
                         var row = group.Rows[i];
-                        <tr class="pm-kpi-row" data-kpi-id="@row.KpiId">
+                        var isReadOnly = Model.ReadOnly || row.IsReadOnlySource;
+                        <tr class="pm-kpi-row" data-kpi-id="@row.KpiId" data-sp="@row.IsReadOnlySource.ToString().ToLower()">
                             @if (i == 0)
                             {
                                 <td rowspan="@group.Rows.Count" class="pm-indicator-cell pm-ind-@group.IndicatorCode" title="@group.IndicatorName">
                                     @group.IndicatorCode
                                 </td>
                             }
-                            <td>@row.Description</td>
+                            <td>
+                                @row.Description
+                                @if (row.IsReadOnlySource)
+                                {
+                                    <span class="pm-source-tag pm-source-sp" title="Populated automatically via stored procedure - not editable here">SP</span>
+                                }
+                            </td>
                             <td>@row.UnitName</td>
                             <td>
-                                <select class="form-select form-select-sm pm-f-model" @(Model.ReadOnly ? "disabled" : "")>
+                                <select class="form-select form-select-sm pm-f-model" @(isReadOnly ? "disabled" : "")>
                                     <option value="">-</option>
                                     @foreach (var m in Model.Models)
                                     {
@@ -62,18 +69,22 @@
                                     }
                                 </select>
                             </td>
-                            <td><input type="number" step="0.01" class="form-control form-control-sm pm-f-f26" value="@row.F26Value" @(Model.ReadOnly ? "readonly" : "") /></td>
-                            <td><input type="number" step="0.01" class="form-control form-control-sm pm-f-f27" value="@row.F27Value" @(Model.ReadOnly ? "readonly" : "") /></td>
-                            <td><input type="number" step="0.01" class="form-control form-control-sm pm-f-week" value="@row.WeekValue" @(Model.ReadOnly ? "readonly" : "") /></td>
-                            <td><input type="number" step="0.01" class="form-control form-control-sm pm-f-month" value="@row.MonthCumValue" @(Model.ReadOnly ? "readonly" : "") /></td>
-                            <td><input type="number" step="0.01" class="form-control form-control-sm pm-f-ytd" value="@row.YtdValue" @(Model.ReadOnly ? "readonly" : "") /></td>
-                            <td><input type="text" class="form-control form-control-sm pm-f-remarks" value="@row.Remarks" @(Model.ReadOnly ? "readonly" : "") /></td>
+                            <td><input type="number" step="0.01" class="form-control form-control-sm pm-f-f26" value="@row.F26Value" @(isReadOnly ? "readonly" : "") /></td>
+                            <td><input type="number" step="0.01" class="form-control form-control-sm pm-f-f27" value="@row.F27Value" @(isReadOnly ? "readonly" : "") /></td>
+                            <td><input type="number" step="0.01" class="form-control form-control-sm pm-f-week" value="@row.WeekValue" @(isReadOnly ? "readonly" : "") /></td>
+                            <td><input type="number" step="0.01" class="form-control form-control-sm pm-f-month" value="@row.MonthCumValue" @(isReadOnly ? "readonly" : "") /></td>
+                            <td><input type="number" step="0.01" class="form-control form-control-sm pm-f-ytd" value="@row.YtdValue" @(isReadOnly ? "readonly" : "") /></td>
+                            <td><input type="text" class="form-control form-control-sm pm-f-remarks" value="@row.Remarks" @(isReadOnly ? "readonly" : "") /></td>
                         </tr>
                     }
                 }
             </tbody>
         </table>
     </div>
+    <p class="text-muted small mb-0">
+        <span class="pm-source-tag pm-source-sp">SP</span> KPIs are populated automatically by the plant's stored procedure and can't be edited here.
+        Use the <kbd>&uarr;</kbd> <kbd>&darr;</kbd> arrow keys to move between cells in the same column.
+    </p>
 </div>
 
 @if (!Model.ReadOnly)
@@ -94,6 +105,8 @@
             var rows = [];
             $('.pm-kpi-row').each(function () {
                 var $row = $(this);
+                if ($row.data('sp')) return; // SP-sourced rows are never sent for save
+
                 rows.push({
                     kpiId: parseInt($row.data('kpi-id'), 10),
                     modelId: $row.find('.pm-f-model').val() ? parseInt($row.find('.pm-f-model').val(), 10) : null,
@@ -145,6 +158,27 @@
             pmConfirm('Mark this meeting as completed? You will no longer be able to edit it.', function () {
                 saveEntry(true);
             });
+        });
+
+        // Excel-style Up/Down cell navigation: move focus to the same column in the row
+        // above/below instead of the browser's native number-input spinner behavior.
+        $('.pm-entry-table').on('keydown', '.pm-f-f26, .pm-f-f27, .pm-f-week, .pm-f-month, .pm-f-ytd, .pm-f-remarks', function (e) {
+            if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+            e.preventDefault();
+
+            var $cell = $(this);
+            var colClass = $cell.attr('class').split(/\s+/).find(function (c) { return c.indexOf('pm-f-') === 0; });
+            var $row = $cell.closest('tr');
+            var $targetRow = e.key === 'ArrowUp'
+                ? $row.prevAll('tr.pm-kpi-row').first()
+                : $row.nextAll('tr.pm-kpi-row').first();
+
+            if ($targetRow.length) {
+                var $target = $targetRow.find('.' + colClass);
+                if ($target.length) {
+                    $target.trigger('focus').select();
+                }
+            }
         });
     </script>
 }

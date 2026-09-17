@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ProductionMeeting.Helpers;
 using ProductionMeeting.Models;
 
 namespace ProductionMeeting.Data;
@@ -64,37 +65,37 @@ public static class SeedData
         );
 
         builder.Entity<KpiMaster>().HasData(
-            // Safety (Indicator 1)
-            Kpi(1, 1, 1, "First Aid", 1),
-            Kpi(2, 1, 1, "Near Miss incidence", 2),
-            Kpi(3, 1, 1, "Fire Incidence", 3),
+            // Safety (Indicator 1) - fewer incidents is always better
+            Kpi(1, 1, 1, "First Aid", 1, lowerIsBetter: true),
+            Kpi(2, 1, 1, "Near Miss incidence", 2, lowerIsBetter: true),
+            Kpi(3, 1, 1, "Fire Incidence", 3, lowerIsBetter: true),
 
             // Quality (Indicator 2)
-            Kpi(4, 2, 1, "Offline Rework RPT XUV3XO", 4),
-            Kpi(5, 2, 1, "Offline Rework RPT XUV400", 5),
-            Kpi(6, 2, 6, "Buyoff Manpower Deployed", 6),
-            Kpi(7, 2, 6, "Rework Manpower Deployed", 7),
-            Kpi(8, 2, 2, "Process wise Zero Defect Stages *", 8),
+            Kpi(4, 2, 1, "Offline Rework RPT XUV3XO", 4, lowerIsBetter: true),
+            Kpi(5, 2, 1, "Offline Rework RPT XUV400", 5, lowerIsBetter: true),
+            Kpi(6, 2, 6, "Buyoff Manpower Deployed", 6, lowerIsBetter: true),
+            Kpi(7, 2, 6, "Rework Manpower Deployed", 7, lowerIsBetter: true),
+            Kpi(8, 2, 2, "Process wise Zero Defect Stages *", 8, source: KpiSources.StoredProcedure),
 
             // Cost (Indicator 3)
-            Kpi(9, 3, 3, "Scrap Cost Process", 9),
+            Kpi(9, 3, 3, "Scrap Cost Process", 9, lowerIsBetter: true),
             Kpi(10, 3, 7, "Repairs & Maint. Cost Saving", 10),
-            Kpi(11, 3, 6, "Contract Labour", 11),
-            Kpi(12, 3, 2, "Traceability", 12),
+            Kpi(11, 3, 6, "Contract Labour", 11, lowerIsBetter: true),
+            Kpi(12, 3, 2, "Traceability", 12, source: KpiSources.StoredProcedure),
 
             // Delivery (Indicator 4)
             Kpi(13, 4, 2, "Schedule Adh.", 13),
-            Kpi(14, 4, 1, "A Rank Breakdown", 14),
-            Kpi(15, 4, 2, "Minor Stoppages", 15),
-            Kpi(16, 4, 2, "Straight Pass Ratio", 16),
-            Kpi(17, 4, 1, "Non RFD Veh > 5 days", 17),
+            Kpi(14, 4, 1, "A Rank Breakdown", 14, lowerIsBetter: true),
+            Kpi(15, 4, 2, "Minor Stoppages", 15, lowerIsBetter: true),
+            Kpi(16, 4, 2, "Straight Pass Ratio", 16, source: KpiSources.StoredProcedure),
+            Kpi(17, 4, 1, "Non RFD Veh > 5 days", 17, lowerIsBetter: true),
 
             // Production (Indicator 5)
             Kpi(18, 5, 1, "Eq.veh/man/year", 18),
 
-            // Sustainability (Indicator 6)
-            Kpi(19, 6, 4, "Water", 19),
-            Kpi(20, 6, 5, "Power", 20),
+            // Sustainability (Indicator 6) - lower consumption is better
+            Kpi(19, 6, 4, "Water", 19, lowerIsBetter: true),
+            Kpi(20, 6, 5, "Power", 20, lowerIsBetter: true),
 
             // Morale (Indicator 7)
             Kpi(21, 7, 1, "Recognition of Associates through JIGYASA Portal", 21),
@@ -106,7 +107,8 @@ public static class SeedData
         );
     }
 
-    private static KpiMaster Kpi(int kpiId, int indicatorId, int unitId, string description, int displayOrder) => new()
+    private static KpiMaster Kpi(int kpiId, int indicatorId, int unitId, string description, int displayOrder,
+        string source = KpiSources.Manual, bool lowerIsBetter = false) => new()
     {
         KpiId = kpiId,
         PlantId = 1,
@@ -115,6 +117,8 @@ public static class SeedData
         UnitId = unitId,
         Description = description,
         DisplayOrder = displayOrder,
+        Source = source,
+        LowerIsBetter = lowerIsBetter,
         CreatedBy = SeedUser,
         CreatedDate = SeedDate
     };

@@ -52,7 +52,7 @@ public class UserManagementService : IUserManagementService
                     accessSummary = string.Join(", ", userAccess
                         .GroupBy(a => a.Plant.Name)
                         .Select(g => g.Any(x => x.LineId == null)
-                            ? $"{g.Key} (All Lines)"
+                            ? $"{g.Key} (All Shops)"
                             : $"{g.Key} ({string.Join("/", g.Select(x => x.Line!.Name))})"));
                 }
             }

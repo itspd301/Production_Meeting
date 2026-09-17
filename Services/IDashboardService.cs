@@ -4,5 +4,5 @@ namespace ProductionMeeting.Services;
 
 public interface IDashboardService
 {
-    Task<DashboardViewModel> GetDashboardAsync(CancellationToken cancellationToken = default);
+    Task<DashboardViewModel> GetDashboardAsync(DashboardViewModel filters, string userId, bool isAdmin, CancellationToken cancellationToken = default);
 }

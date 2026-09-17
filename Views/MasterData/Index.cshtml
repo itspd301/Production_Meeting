@@ -8,8 +8,7 @@
 
     <ul class="nav nav-tabs" id="masterTabs" role="tablist">
         <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-plants" type="button">Plants</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-lines" type="button">Lines</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-shifts" type="button">Shifts</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-lines" type="button">Shops</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-departments" type="button">Departments</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-models" type="button">Models</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-units" type="button">Units</button></li>
@@ -41,7 +40,7 @@
 
         <div class="tab-pane fade" id="tab-lines">
             <div class="d-flex justify-content-end mb-2">
-                <button class="btn btn-sm btn-primary" onclick="openMasterModal('Line', null)"><i class="bi bi-plus-lg"></i> Add Line</button>
+                <button class="btn btn-sm btn-primary" onclick="openMasterModal('Line', null)"><i class="bi bi-plus-lg"></i> Add Shop</button>
             </div>
             <table class="table table-sm table-hover">
                 <thead class="table-light"><tr><th>Plant</th><th>Code</th><th>Name</th><th>Status</th><th></th></tr></thead>
@@ -54,28 +53,6 @@
                             <td class="text-end">
                                 <button class="btn btn-sm btn-outline-secondary" onclick='openMasterModal("Line", @Html.Raw(Json.Serialize(r)))'><i class="bi bi-pencil-square"></i></button>
                                 <button class="btn btn-sm @(r.IsActive ? "btn-outline-danger" : "btn-outline-success")" onclick="toggleActive('Line', @r.Id, @(r.IsActive ? "false" : "true"))"><i class="bi @(r.IsActive ? "bi-slash-circle" : "bi-check-circle")"></i></button>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-
-        <div class="tab-pane fade" id="tab-shifts">
-            <div class="d-flex justify-content-end mb-2">
-                <button class="btn btn-sm btn-primary" onclick="openMasterModal('Shift', null)"><i class="bi bi-plus-lg"></i> Add Shift</button>
-            </div>
-            <table class="table table-sm table-hover">
-                <thead class="table-light"><tr><th>Name</th><th>Start</th><th>End</th><th>Status</th><th></th></tr></thead>
-                <tbody>
-                    @foreach (var r in Model.Shifts)
-                    {
-                        <tr>
-                            <td>@r.Name</td><td>@r.StartTime</td><td>@r.EndTime</td>
-                            <td><span class="pm-badge-status @(r.IsActive ? "status-green" : "status-red")">@(r.IsActive ? "Active" : "Inactive")</span></td>
-                            <td class="text-end">
-                                <button class="btn btn-sm btn-outline-secondary" onclick='openMasterModal("Shift", @Html.Raw(Json.Serialize(r)))'><i class="bi bi-pencil-square"></i></button>
-                                <button class="btn btn-sm @(r.IsActive ? "btn-outline-danger" : "btn-outline-success")" onclick="toggleActive('Shift', @r.Id, @(r.IsActive ? "false" : "true"))"><i class="bi @(r.IsActive ? "bi-slash-circle" : "bi-check-circle")"></i></button>
                             </td>
                         </tr>
                     }
@@ -203,16 +180,6 @@
                     <label class="form-label">Name</label>
                     <input type="text" id="mName" class="form-control" />
                 </div>
-                <div class="row" id="mShiftGroup">
-                    <div class="col-6 mb-3">
-                        <label class="form-label">Start Time</label>
-                        <input type="time" id="mStartTime" class="form-control" />
-                    </div>
-                    <div class="col-6 mb-3">
-                        <label class="form-label">End Time</label>
-                        <input type="time" id="mEndTime" class="form-control" />
-                    </div>
-                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -235,14 +202,12 @@
             $('#mCode').val(row ? row.code : '');
             $('#mName').val(row ? row.name : '');
             $('#mPlantId').val(row && row.plantId ? row.plantId : '');
-            $('#mStartTime').val(row ? row.startTime : '');
-            $('#mEndTime').val(row ? row.endTime : '');
 
             $('#mCodeGroup').toggle(type === 'Plant' || type === 'Indicator');
             $('#mPlantGroup').toggle(type === 'Line');
-            $('#mShiftGroup').toggle(type === 'Shift');
 
-            $('#masterModalTitle').text((row ? 'Edit ' : 'Add ') + type);
+            var typeLabel = type === 'Line' ? 'Shop' : type;
+            $('#masterModalTitle').text((row ? 'Edit ' : 'Add ') + typeLabel);
             masterModal.show();
         }
 
@@ -252,9 +217,7 @@
                 id: $('#mId').val() || null,
                 code: $('#mCode').val(),
                 name: $('#mName').val(),
-                plantId: $('#mPlantId').val(),
-                startTime: $('#mStartTime').val(),
-                endTime: $('#mEndTime').val()
+                plantId: $('#mPlantId').val()
             };
 
             if (!payload.name) {
