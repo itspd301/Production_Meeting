@@ -39,12 +39,42 @@
         return fetch(url, options);
     };
 
-    // ---- Sidebar toggle (mobile/tablet) ----
+    // ---- Sidebar toggle ----
+    // Desktop: collapses the sidebar to an icon-only rail (state remembered per browser).
+    // Mobile/tablet (<=991px): slides the full sidebar in/out as an overlay instead.
     var toggleBtn = document.getElementById("pmSidebarToggle");
+    var appShell = document.querySelector(".pm-app");
     var sidebar = document.getElementById("pmSidebar");
-    if (toggleBtn && sidebar) {
+    var mobileQuery = window.matchMedia("(max-width: 991.98px)");
+
+    function isCollapsedSaved() {
+        try {
+            return localStorage.getItem("pmSidebarCollapsed") === "true";
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function saveCollapsed(isCollapsed) {
+        try {
+            localStorage.setItem("pmSidebarCollapsed", isCollapsed ? "true" : "false");
+        } catch (e) {
+            // Ignore - private browsing / storage disabled. Toggle still works this session.
+        }
+    }
+
+    if (appShell && !mobileQuery.matches && isCollapsedSaved()) {
+        appShell.classList.add("pm-app-collapsed");
+    }
+
+    if (toggleBtn && sidebar && appShell) {
         toggleBtn.addEventListener("click", function () {
-            sidebar.classList.toggle("pm-sidebar-open");
+            if (mobileQuery.matches) {
+                sidebar.classList.toggle("pm-sidebar-open");
+            } else {
+                var isCollapsed = appShell.classList.toggle("pm-app-collapsed");
+                saveCollapsed(isCollapsed);
+            }
         });
     }
 

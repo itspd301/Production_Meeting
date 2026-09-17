@@ -13,7 +13,7 @@
 
     <ul class="pm-nav">
         <li class="@ActiveClass("Dashboard")">
-            <a asp-controller="Dashboard" asp-action="Index">
+            <a asp-controller="Dashboard" asp-action="Index" title="Dashboard">
                 <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
             </a>
         </li>
@@ -21,14 +21,14 @@
         @if (User.IsInRole(Roles.Admin) || User.IsInRole(Roles.Manager) || User.IsInRole(Roles.ProductionUser))
         {
             <li class="@ActiveClass("ProductionMeeting")">
-                <a asp-controller="ProductionMeeting" asp-action="Index">
+                <a asp-controller="ProductionMeeting" asp-action="Index" title="Production Meeting">
                     <i class="bi bi-clipboard-data"></i> <span>Production Meeting</span>
                 </a>
             </li>
         }
 
         <li class="@ActiveClass("Reports")">
-            <a asp-controller="Reports" asp-action="Index">
+            <a asp-controller="Reports" asp-action="Index" title="Reports">
                 <i class="bi bi-bar-chart-line"></i> <span>Reports</span>
             </a>
         </li>
@@ -37,17 +37,17 @@
         {
             <li class="pm-nav-heading"><span>Administration</span></li>
             <li class="@ActiveClass("KpiMaster")">
-                <a asp-controller="KpiMaster" asp-action="Index">
+                <a asp-controller="KpiMaster" asp-action="Index" title="KPI Master">
                     <i class="bi bi-card-checklist"></i> <span>KPI Master</span>
                 </a>
             </li>
             <li class="@ActiveClass("MasterData")">
-                <a asp-controller="MasterData" asp-action="Index">
+                <a asp-controller="MasterData" asp-action="Index" title="Master Data">
                     <i class="bi bi-database-gear"></i> <span>Master Data</span>
                 </a>
             </li>
             <li class="@ActiveClass("UserManagement")">
-                <a asp-controller="UserManagement" asp-action="Index">
+                <a asp-controller="UserManagement" asp-action="Index" title="Users">
                     <i class="bi bi-people"></i> <span>Users</span>
                 </a>
             </li>

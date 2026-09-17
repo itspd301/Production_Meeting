@@ -42,8 +42,30 @@ body {
   top: 0;
   height: 100vh;
   overflow-y: auto;
-  transition: margin-left 0.2s ease;
+  overflow-x: hidden;
+  transition: width 0.2s ease, margin-left 0.2s ease;
   z-index: 1030;
+}
+
+/* Collapsed to an icon-only rail (desktop toggle). */
+.pm-app.pm-app-collapsed .pm-sidebar {
+  width: 68px;
+}
+
+.pm-app.pm-app-collapsed .pm-sidebar-brand span,
+.pm-app.pm-app-collapsed .pm-nav li a span,
+.pm-app.pm-app-collapsed .pm-nav-heading {
+  display: none;
+}
+
+.pm-app.pm-app-collapsed .pm-sidebar-brand {
+  justify-content: center;
+  padding: 1.1rem 0.25rem;
+}
+
+.pm-app.pm-app-collapsed .pm-nav li a {
+  justify-content: center;
+  padding: 0.65rem 0;
 }
 
 .pm-sidebar-brand {
@@ -131,7 +153,15 @@ body {
   background: transparent;
   font-size: 1.3rem;
   color: #465364;
-  display: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.4rem;
+  border-radius: 0.4rem;
+}
+
+.pm-sidebar-toggle:hover {
+  background: rgba(21, 35, 59, 0.06);
 }
 
 .pm-breadcrumb {
@@ -460,10 +490,29 @@ body {
     margin-left: 0;
   }
 
-  .pm-sidebar-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  /* The icon-rail collapse is a desktop-only concept; on mobile the toggle always
+     controls the off-canvas open/close overlay above, at full width. */
+  .pm-app.pm-app-collapsed .pm-sidebar {
+    width: var(--pm-sidebar-width);
+  }
+
+  .pm-app.pm-app-collapsed .pm-sidebar-brand span,
+  .pm-app.pm-app-collapsed .pm-nav li a span,
+  .pm-app.pm-app-collapsed .pm-nav-heading {
+    display: initial;
+  }
+
+  .pm-app.pm-app-collapsed .pm-sidebar-brand,
+  .pm-app.pm-app-collapsed .pm-nav li a {
+    justify-content: flex-start;
+  }
+
+  .pm-app.pm-app-collapsed .pm-sidebar-brand {
+    padding: 1.1rem 1.25rem;
+  }
+
+  .pm-app.pm-app-collapsed .pm-nav li a {
+    padding: 0.65rem 1.25rem;
   }
 }
 
