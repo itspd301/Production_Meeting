@@ -211,6 +211,16 @@
             masterModal.show();
         }
 
+        var saveUrls = {
+            Plant: '@Url.Action("SavePlant")',
+            Line: '@Url.Action("SaveLine")',
+            Shift: '@Url.Action("SaveShift")',
+            Department: '@Url.Action("SaveDepartment")',
+            Model: '@Url.Action("SaveModel")',
+            Unit: '@Url.Action("SaveUnit")',
+            Indicator: '@Url.Action("SaveIndicator")'
+        };
+
         function saveMaster() {
             var type = $('#mType').val();
             var payload = {
@@ -225,7 +235,7 @@
                 return;
             }
 
-            $.post('@Url.Action("Index")'.replace('Index', 'Save' + type), payload, function (res) {
+            $.post(saveUrls[type], payload, function (res) {
                 if (res.success) {
                     toastr.success(res.message);
                     masterModal.hide();
