@@ -88,7 +88,6 @@ public class DashboardService : IDashboardService
             IndicatorName = k.Indicator.Name,
             Description = k.Description,
             UnitName = k.Unit.Name,
-            Source = k.Source ?? KpiSources.Manual,
             Target = tx?.F27Value,
             WeekValue = tx?.WeekValue,
             MonthCumValue = tx?.MonthCumValue,
@@ -150,27 +149,8 @@ public class DashboardService : IDashboardService
             }
         };
 
-        foreach (var row in filters.Rows.Where(r => r.Source == KpiSources.StoredProcedure))
-        {
-            cards.Add(new DashboardCardViewModel
-            {
-                Label = row.Description,
-                ValueDisplay = row.WeekValue.HasValue ? $"{row.WeekValue}{(row.UnitName == "%" ? "%" : "")}" : "-",
-                Status = ToCardStatus(row.Status),
-                SubText = row.Target.HasValue ? $"Target {row.Target}" : "No target set"
-            });
-        }
-
         return cards;
     }
-
-    private static string ToCardStatus(string rowStatus) => rowStatus switch
-    {
-        "Green" => "good",
-        "Amber" => "warn",
-        "Red" => "bad",
-        _ => "neutral"
-    };
 
     private static DateTime GetMonday(DateTime date)
     {

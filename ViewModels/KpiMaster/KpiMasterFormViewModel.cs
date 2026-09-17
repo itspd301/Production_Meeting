@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using ProductionMeeting.Helpers;
 
 namespace ProductionMeeting.ViewModels.KpiMaster;
 
@@ -33,9 +32,6 @@ public class KpiMasterFormViewModel
     public int DisplayOrder { get; set; }
 
     public bool IsActive { get; set; } = true;
-
-    [Display(Name = "Source")]
-    public string Source { get; set; } = KpiSources.Manual;
 
     [Display(Name = "Lower value is better")]
     public bool LowerIsBetter { get; set; }

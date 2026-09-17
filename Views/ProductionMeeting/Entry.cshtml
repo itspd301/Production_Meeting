@@ -44,21 +44,15 @@
                     for (var i = 0; i < group.Rows.Count; i++)
                     {
                         var row = group.Rows[i];
-                        var isReadOnly = Model.ReadOnly || row.IsReadOnlySource;
-                        <tr class="pm-kpi-row" data-kpi-id="@row.KpiId" data-sp="@row.IsReadOnlySource.ToString().ToLower()">
+                        var isReadOnly = Model.ReadOnly;
+                        <tr class="pm-kpi-row" data-kpi-id="@row.KpiId">
                             @if (i == 0)
                             {
                                 <td rowspan="@group.Rows.Count" class="pm-indicator-cell pm-ind-@group.IndicatorCode" title="@group.IndicatorName">
                                     @group.IndicatorCode
                                 </td>
                             }
-                            <td>
-                                @row.Description
-                                @if (row.IsReadOnlySource)
-                                {
-                                    <span class="pm-source-tag pm-source-sp" title="Populated automatically via stored procedure - not editable here">SP</span>
-                                }
-                            </td>
+                            <td>@row.Description</td>
                             <td>@row.UnitName</td>
                             <td>
                                 <select class="form-select form-select-sm pm-f-model" @(isReadOnly ? "disabled" : "")>
@@ -82,7 +76,6 @@
         </table>
     </div>
     <p class="text-muted small mb-0">
-        <span class="pm-source-tag pm-source-sp">SP</span> KPIs are populated automatically by the plant's stored procedure and can't be edited here.
         Use the <kbd>&uarr;</kbd> <kbd>&darr;</kbd> arrow keys to move between cells in the same column.
     </p>
 </div>
@@ -105,8 +98,6 @@
             var rows = [];
             $('.pm-kpi-row').each(function () {
                 var $row = $(this);
-                if ($row.data('sp')) return; // SP-sourced rows are never sent for save
-
                 rows.push({
                     kpiId: parseInt($row.data('kpi-id'), 10),
                     modelId: $row.find('.pm-f-model').val() ? parseInt($row.find('.pm-f-model').val(), 10) : null,

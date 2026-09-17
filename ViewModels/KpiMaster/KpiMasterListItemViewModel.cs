@@ -11,7 +11,6 @@ public class KpiMasterListItemViewModel
     public string Description { get; set; } = null!;
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; }
-    public string? Source { get; set; }
 }
 
 public class KpiMasterIndexViewModel

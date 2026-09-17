@@ -55,13 +55,7 @@
                                     @group.IndicatorCode
                                 </td>
                             }
-                            <td>
-                                @row.Description
-                                @if (row.IsReadOnlySource)
-                                {
-                                    <span class="pm-source-tag pm-source-sp" title="Populated automatically via stored procedure">SP</span>
-                                }
-                            </td>
+                            <td>@row.Description</td>
                             <td>@row.UnitName</td>
                             <td>@row.F26Value</td>
                             <td>@row.F27Value</td>

@@ -64,8 +64,7 @@ public class KpiMasterService : IKpiMasterService
                 UnitName = k.Unit.Name,
                 Description = k.Description,
                 DisplayOrder = k.DisplayOrder,
-                IsActive = k.IsActive,
-                Source = k.Source
+                IsActive = k.IsActive
             })
             .ToListAsync(cancellationToken);
 
@@ -104,7 +103,6 @@ public class KpiMasterService : IKpiMasterService
             Description = kpi.Description,
             DisplayOrder = kpi.DisplayOrder,
             IsActive = kpi.IsActive,
-            Source = kpi.Source ?? Helpers.KpiSources.Manual,
             LowerIsBetter = kpi.LowerIsBetter,
             Plants = await GetPlantOptionsAsync(cancellationToken),
             Lines = await GetLinesForPlantAsync(kpi.PlantId, cancellationToken),
@@ -133,7 +131,6 @@ public class KpiMasterService : IKpiMasterService
             Description = form.Description.Trim(),
             DisplayOrder = form.DisplayOrder,
             IsActive = form.IsActive,
-            Source = form.Source,
             LowerIsBetter = form.LowerIsBetter,
             CreatedBy = userId
         });
@@ -171,7 +168,6 @@ public class KpiMasterService : IKpiMasterService
         kpi.Description = form.Description.Trim();
         kpi.DisplayOrder = form.DisplayOrder;
         kpi.IsActive = form.IsActive;
-        kpi.Source = form.Source;
         kpi.LowerIsBetter = form.LowerIsBetter;
         kpi.ModifiedBy = userId;
         kpi.ModifiedDate = DateTime.UtcNow;

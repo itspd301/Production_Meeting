@@ -78,7 +78,6 @@ else
                             <th>Category</th>
                             <th>Indicator</th>
                             <th>Unit</th>
-                            <th>Source</th>
                             <th>Target</th>
                             <th>Week</th>
                             <th>Variance</th>
@@ -91,7 +90,7 @@ else
                     <tbody>
                         @if (Model.Rows.Count == 0)
                         {
-                            <tr><td colspan="11" class="text-center text-muted">No active KPIs configured for this shop.</td></tr>
+                            <tr><td colspan="10" class="text-center text-muted">No active KPIs configured for this shop.</td></tr>
                         }
                         @foreach (var r in Model.Rows)
                         {
@@ -99,12 +98,6 @@ else
                                 <td><span class="pm-indicator-cell pm-ind-@r.IndicatorCode d-inline-block px-2 py-1 rounded">@r.IndicatorCode</span></td>
                                 <td>@r.Description</td>
                                 <td>@r.UnitName</td>
-                                <td>
-                                    @{
-                                        var srcClass = r.Source == KpiSources.StoredProcedure ? "pm-source-sp" : r.Source == KpiSources.Calculated ? "pm-source-calculated" : "pm-source-manual";
-                                    }
-                                    <span class="pm-source-tag @srcClass">@r.Source</span>
-                                </td>
                                 <td>@(r.Target?.ToString() ?? "-")</td>
                                 <td><b>@(r.WeekValue?.ToString() ?? "-")</b></td>
                                 <td>@(r.Variance?.ToString() ?? "-")</td>

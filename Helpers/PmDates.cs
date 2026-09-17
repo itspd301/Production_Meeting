@@ -36,11 +36,15 @@ public static class PmDates
         return ISOWeek.ToDateTime(year, week, DayOfWeek.Monday);
     }
 
+    // A week always runs Monday through Sunday (ISO 8601). Snaps to that week's Monday
+    // first rather than trusting the caller already passed one, so the label is always
+    // the full 7-day range regardless of which day of the week is passed in.
     public static string WeekLabel(DateTime date)
     {
         var week = ISOWeek.GetWeekOfYear(date);
         var year = ISOWeek.GetYear(date);
-        var friday = date.AddDays(4);
-        return $"Week {week}, {year} ({date:dd-MMM} - {friday:dd-MMM})";
+        var monday = ISOWeek.ToDateTime(year, week, DayOfWeek.Monday);
+        var sunday = monday.AddDays(6);
+        return $"Week {week}, {year} ({monday:dd-MMM} - {sunday:dd-MMM})";
     }
 }

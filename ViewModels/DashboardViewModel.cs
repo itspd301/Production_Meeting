@@ -17,7 +17,6 @@ public class DashboardKpiRowViewModel
     public string IndicatorName { get; set; } = null!;
     public string Description { get; set; } = null!;
     public string UnitName { get; set; } = null!;
-    public string Source { get; set; } = KpiSources.Manual;
     public decimal? Target { get; set; }
     public decimal? WeekValue { get; set; }
     public decimal? Variance { get; set; }

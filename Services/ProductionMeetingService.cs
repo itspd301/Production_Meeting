@@ -175,7 +175,6 @@ public class ProductionMeetingService : IProductionMeetingService
                         Description = k.Description,
                         UnitName = k.Unit.Name,
                         DisplayOrder = k.DisplayOrder,
-                        Source = k.Source,
                         TransactionId = tx?.TransactionId,
                         ModelId = tx?.ModelId,
                         F26Value = tx?.F26Value,
@@ -222,19 +221,10 @@ public class ProductionMeetingService : IProductionMeetingService
             .Where(t => t.SessionId == request.SessionId)
             .ToListAsync(cancellationToken);
 
-        // KPIs sourced from the plant's own stored procedure are never editable through this
-        // grid, even if a client sends a value for one - the entry screen renders them
-        // read-only, but this is the authoritative check.
-        var spKpiIds = (await _db.KpiMasters
-            .Where(k => k.Source == Helpers.KpiSources.StoredProcedure)
-            .Select(k => k.KpiId)
-            .ToListAsync(cancellationToken))
-            .ToHashSet();
-
         var auditsToAdd = new List<KpiTransactionAudit>();
         var now = DateTime.UtcNow;
 
-        foreach (var row in request.Rows.Where(r => !spKpiIds.Contains(r.KpiId)))
+        foreach (var row in request.Rows)
         {
             var existing = existingTransactions.FirstOrDefault(t => t.KpiId == row.KpiId && t.ModelId == row.ModelId);
 
