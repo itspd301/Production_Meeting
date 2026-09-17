@@ -51,6 +51,11 @@ public class MasterDataService : IMasterDataService
 
     public async Task<ServiceResult> SavePlantAsync(int? id, string code, string name, string userId, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(name))
+        {
+            return ServiceResult.Fail("Code and Name are required.");
+        }
+
         if (await _db.Plants.AnyAsync(p => p.PlantId != id && p.Code == code, cancellationToken))
         {
             return ServiceResult.Fail("A plant with this code already exists.");
@@ -76,6 +81,16 @@ public class MasterDataService : IMasterDataService
 
     public async Task<ServiceResult> SaveLineAsync(int? id, int plantId, string code, string name, string userId, CancellationToken cancellationToken = default)
     {
+        if (plantId <= 0)
+        {
+            return ServiceResult.Fail("Plant is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(name))
+        {
+            return ServiceResult.Fail("Code and Name are required.");
+        }
+
         if (await _db.ProductionLines.AnyAsync(l => l.LineId != id && l.PlantId == plantId && l.Code == code, cancellationToken))
         {
             return ServiceResult.Fail("A shop with this code already exists for this plant.");
@@ -102,6 +117,11 @@ public class MasterDataService : IMasterDataService
 
     public async Task<ServiceResult> SaveShiftAsync(int? id, string name, TimeSpan? start, TimeSpan? end, string userId, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return ServiceResult.Fail("Name is required.");
+        }
+
         if (id.HasValue)
         {
             var shift = await _db.Shifts.FirstOrDefaultAsync(s => s.ShiftId == id, cancellationToken);
@@ -123,6 +143,11 @@ public class MasterDataService : IMasterDataService
 
     public async Task<ServiceResult> SaveDepartmentAsync(int? id, string name, string userId, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return ServiceResult.Fail("Name is required.");
+        }
+
         if (id.HasValue)
         {
             var dept = await _db.Departments.FirstOrDefaultAsync(d => d.DepartmentId == id, cancellationToken);
@@ -142,6 +167,11 @@ public class MasterDataService : IMasterDataService
 
     public async Task<ServiceResult> SaveModelAsync(int? id, string name, string userId, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return ServiceResult.Fail("Name is required.");
+        }
+
         if (id.HasValue)
         {
             var model = await _db.ProductModels.FirstOrDefaultAsync(m => m.ModelId == id, cancellationToken);
@@ -161,6 +191,11 @@ public class MasterDataService : IMasterDataService
 
     public async Task<ServiceResult> SaveUnitAsync(int? id, string name, string userId, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return ServiceResult.Fail("Name is required.");
+        }
+
         if (id.HasValue)
         {
             var unit = await _db.Units.FirstOrDefaultAsync(u => u.UnitId == id, cancellationToken);
@@ -180,6 +215,11 @@ public class MasterDataService : IMasterDataService
 
     public async Task<ServiceResult> SaveIndicatorAsync(int? id, string code, string name, string userId, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(name))
+        {
+            return ServiceResult.Fail("Code and Name are required.");
+        }
+
         if (id.HasValue)
         {
             var indicator = await _db.Indicators.FirstOrDefaultAsync(i => i.IndicatorId == id, cancellationToken);

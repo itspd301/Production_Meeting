@@ -203,7 +203,7 @@
             $('#mName').val(row ? row.name : '');
             $('#mPlantId').val(row && row.plantId ? row.plantId : '');
 
-            $('#mCodeGroup').toggle(type === 'Plant' || type === 'Indicator');
+            $('#mCodeGroup').toggle(type === 'Plant' || type === 'Line' || type === 'Indicator');
             $('#mPlantGroup').toggle(type === 'Line');
 
             var typeLabel = type === 'Line' ? 'Shop' : type;
@@ -232,6 +232,17 @@
 
             if (!payload.name) {
                 toastr.warning('Name is required.');
+                return;
+            }
+
+            var codeRequired = type === 'Plant' || type === 'Line' || type === 'Indicator';
+            if (codeRequired && !payload.code) {
+                toastr.warning('Code is required.');
+                return;
+            }
+
+            if (type === 'Line' && !payload.plantId) {
+                toastr.warning('Plant is required.');
                 return;
             }
 
