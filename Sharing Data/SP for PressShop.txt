@@ -1,0 +1,235 @@
+
+CREATE PROCEDURE [dbo].[Sp_Press_SAP_Data_Transfer_New]      
+AS      
+BEGIN      
+    SET NOCOUNT ON;      
+    SET XACT_ABORT ON;      
+
+    /* =========================================================      
+       STEP 1: Normalize PLC Counts (SS / HS / M-HS / S-HS / P-HS)      
+       ========================================================= */      
+
+;WITH NormalizedCounts AS  
+(  
+    SELECT  
+        p.Row_Id,  
+        p.MDI,  
+        p.Inserted_date,  
+        p.ADC_SIGNAL,  
+        s.Selection,  
+        s.Cnt  
+    FROM dbo.PLC_auto_schedule_data p  
+    CROSS APPLY (VALUES  
+        ('SS',   TRY_CAST(p.Count_SS AS INT)),  
+('HS',   TRY_CAST(p.Count_HS AS INT)),  
+('M-HS', TRY_CAST(p.Count_M_HS AS INT)),  
+('S-HS', TRY_CAST(p.Count_S_HS AS INT)),  
+('P-HS', TRY_CAST(p.Count_P_HS AS INT))  
+
+    ) s(Selection, Cnt)  
+    WHERE s.Cnt IS NOT NULL  
+      AND s.Cnt > 0  
+),  
+
+/* ✅ STEP 1: Detect MDI change boundaries */  
+MDI_Flag AS  
+(  
+    SELECT *,  
+        CASE   
+            WHEN LAG(MDI) OVER (ORDER BY Inserted_date, Row_Id) = MDI   
+            THEN 0   
+            ELSE 1   
+        END AS ChangeFlag  
+    FROM NormalizedCounts  
+),  
+
+/* ✅ STEP 2: Create MDI groups (continuous sequences) */  
+MDI_Grouped AS  
+(  
+    SELECT *,  
+        SUM(ChangeFlag) OVER (ORDER BY Inserted_date, Row_Id) AS MDI_Group  
+    FROM MDI_Flag  
+),  
+
+/* ✅ STEP 3: Calculate Previous Count INSIDE SAME SEQUENCE */  
+PLC_Delta AS  
+(  
+    SELECT  
+        *,  
+        LAG(Cnt) OVER  
+        (  
+            PARTITION BY MDI, Selection, MDI_Group  
+            ORDER BY Inserted_date, Row_Id  
+        ) AS PrevCnt  
+    FROM MDI_Grouped  
+),  
+
+/* ✅ STEP 4: Final Delta */  
+FinalDelta AS  
+(  
+    SELECT  
+        Row_Id,  
+        MDI,  
+        Inserted_date,  
+        ADC_SIGNAL,  
+        Selection,  
+        Cnt,  
+
+        CASE  
+            WHEN PrevCnt IS NULL THEN Cnt     -- fresh start (VERY IMPORTANT ✅)  
+            WHEN Cnt < PrevCnt THEN Cnt       -- reset  
+            WHEN Cnt = PrevCnt THEN 0         -- no change  
+            ELSE Cnt - PrevCnt                -- normal delta  
+        END AS Part_Qty  
+
+    FROM PLC_Delta  
+),  
+
+/* ✅ STEP 5: Expand Keys */  
+NormalizedKeys AS  
+(  
+    SELECT  
+        fd.*,  
+        k.[Key Position]  
+    FROM FinalDelta fd  
+    CROSS APPLY (VALUES  
+        ('Center'),  
+        ('Right'),  
+        ('Left')  
+    ) k([Key Position])  
+)  
+
+INSERT INTO MM_Press_Shop_Live_Data_Test  
+(  
+    MDI,  
+    PartNumber,  
+    Varient,  
+    Counter,  
+    ADC_Signal,  
+    Part_Qty,  
+    Inserted_date  
+)  
+SELECT  
+    nk.MDI,  
+    pm.[Part Numbers],  
+    pm.[Varient],  
+    nk.Cnt,  
+    nk.ADC_SIGNAL,  
+    nk.Part_Qty,  -- ✅ already correct  
+    nk.Inserted_date  
+
+FROM NormalizedKeys nk  
+
+JOIN dbo.PLC_auto_schedule_data p  
+    ON p.Row_Id = nk.Row_Id  
+   AND (  
+            (nk.[Key Position] = 'Center' AND p.Key_Normal = 1)  
+         OR (nk.[Key Position] = 'Right'  AND p.Key_RH = 1)  
+         OR (nk.[Key Position] = 'Left'   AND p.Key_LH = 1)  
+       )  
+
+JOIN dbo.Panel_Master_Matrix pm  
+    ON pm.[MDI Number] = nk.MDI  
+   AND LTRIM(RTRIM(pm.[Selection])) = nk.Selection  
+   AND LOWER(LTRIM(RTRIM(pm.[Key Position]))) = LOWER(nk.[Key Position])  
+
+/* ✅ Duplicate protection */  
+LEFT JOIN MM_Press_Shop_Live_Data_Test chk  
+    ON chk.MDI = nk.MDI  
+   AND chk.PartNumber = pm.[Part Numbers]  
+   AND chk.Inserted_date = nk.Inserted_date  
+
+WHERE chk.PartNumber IS NULL  
+  AND chk.Status IS NULL;  
+
+
+    /* =========================================================      
+       STEP 3: Insert into SAP Production Booking (UNCHANGED)      
+       ========================================================= */      
+
+    DECLARE @srcounter INT = 10000;      
+    DECLARE @sr_digit  INT =      
+        (SELECT TOP 1 Sr_Digit      
+         FROM MM_SAP_Production_Booking      
+         ORDER BY Row_ID DESC);      
+
+    DECLARE @dCode VARCHAR(2) =      
+        RIGHT('0' + CONVERT(VARCHAR(2), DAY(GETDATE())), 2);      
+
+    DECLARE @mCode VARCHAR(1) =      
+        (SELECT TOP 1 ISNULL(Month_Code, '')      
+         FROM dbo.MM_Month_Year_Code      
+         WHERE Month_Number = MONTH(GETDATE()));      
+
+    DECLARE @yCode VARCHAR(1) =      
+        (SELECT TOP 1 ISNULL(Year_Code, '')      
+         FROM dbo.MM_Month_Year_Code      
+         WHERE Year_Number = YEAR(GETDATE()));      
+
+  DECLARE @Row_ID BIGINT;
+
+    SET @sr_digit =      
+        CASE      
+            WHEN @sr_digit IS NULL THEN @srcounter + 1      
+            WHEN LEN(CONVERT(VARCHAR(20), @sr_digit + 1)) > 5 THEN @srcounter + 1      
+            ELSE @sr_digit + 1      
+        END;    
+
+  SELECT TOP 1
+       @Row_ID = Row_ID
+  FROM MM_Press_Shop_Live_Data_Test
+  WHERE Part_Qty > 0
+    AND ISNULL(SAP_Status,0) = 0
+  ORDER BY Row_ID;
+
+  IF @Row_ID IS NULL
+  BEGIN
+    RETURN;
+  END
+
+    INSERT INTO MM_SAP_Production_Booking      
+    (      
+        Serial_No, Press_Part_No, Part_Quantity,      
+        machineType, PartStatus, Prod_Line,      
+        Sr_Digit, Data_Status,      
+        Error_Msg, Prt_Txn_ID, SAP_Trn_ID,      
+        Is_Transfered, Is_Purgeable, Is_Edited, Is_Deleted,      
+        Inserted_Host, Inserted_User_ID, Inserted_Date,      
+        Updated_Host, Updated_User_ID, Updated_Date,      
+        MATNR, SERNR, WERKS, PRODLN,      
+        GJAHR, BUDAT, ERZET, CHARG, MENGE      
+    )      
+    SELECT      
+        LEFT(      
+            'PRS' + @dCode + @mCode + '6' + @yCode +      
+            CONVERT(VARCHAR(10),      
+                @sr_digit + ROW_NUMBER() OVER (ORDER BY (SELECT 1)) - 1      
+            ),      
+            20      
+        ),      
+        LEFT(s.PartNumber, 25),      
+        CAST(s.Part_Qty AS INT),      
+        'hnf',      
+        'Completed',      
+        'P',      
+        (@sr_digit + ROW_NUMBER() OVER (ORDER BY (SELECT 1)) - 1),      
+        'N',      
+        NULL, NULL, NULL,      
+        0, 0, 0, 0,      
+        'SQLJOB', 1, GETDATE(),      
+        NULL, NULL, NULL,      
+        LEFT(s.PartNumber, 20),      
+        NULL, NULL,      
+        s.MDI,      
+        s.Inserted_date,      
+        s.Inserted_date,      
+        s.Inserted_date,      
+        NULL,      
+        CAST(s.Part_Qty AS INT)      
+    FROM MM_Press_Shop_Live_Data_Test s
+  WHERE s.Row_ID = @Row_ID;   
+
+  UPDATE MM_Press_Shop_Live_Data_Test
+  SET SAP_Status = 1
+  WHERE Row_ID = @Row_ID;
+END;
