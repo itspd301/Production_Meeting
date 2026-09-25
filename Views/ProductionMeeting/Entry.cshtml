@@ -63,11 +63,11 @@
                                     }
                                 </select>
                             </td>
-                            <td><input type="number" step="0.01" class="form-control form-control-sm pm-f-f26" value="@row.F26Value" @(isReadOnly ? "readonly" : "") /></td>
-                            <td><input type="number" step="0.01" class="form-control form-control-sm pm-f-f27" value="@row.F27Value" @(isReadOnly ? "readonly" : "") /></td>
-                            <td><input type="number" step="0.01" class="form-control form-control-sm pm-f-week" value="@row.WeekValue" @(isReadOnly ? "readonly" : "") /></td>
-                            <td><input type="number" step="0.01" class="form-control form-control-sm pm-f-month" value="@row.MonthCumValue" @(isReadOnly ? "readonly" : "") /></td>
-                            <td><input type="number" step="0.01" class="form-control form-control-sm pm-f-ytd" value="@row.YtdValue" @(isReadOnly ? "readonly" : "") /></td>
+                            <td><input type="number" step="1" class="form-control form-control-sm pm-f-f26" value="@row.F26Value" @(isReadOnly ? "readonly" : "") /></td>
+                            <td><input type="number" step="1" class="form-control form-control-sm pm-f-f27" value="@row.F27Value" @(isReadOnly ? "readonly" : "") /></td>
+                            <td><input type="number" step="1" class="form-control form-control-sm pm-f-week" value="@row.WeekValue" @(isReadOnly ? "readonly" : "") /></td>
+                            <td><input type="number" step="1" class="form-control form-control-sm pm-f-month" value="@row.MonthCumValue" @(isReadOnly ? "readonly" : "") /></td>
+                            <td><input type="number" step="1" class="form-control form-control-sm pm-f-ytd" value="@row.YtdValue" @(isReadOnly ? "readonly" : "") /></td>
                             <td><input type="text" class="form-control form-control-sm pm-f-remarks" value="@row.Remarks" @(isReadOnly ? "readonly" : "") /></td>
                         </tr>
                     }
@@ -84,7 +84,7 @@
 {
     <div class="d-flex justify-content-end gap-2 mb-4">
         <button type="button" id="btnSaveDraft" class="btn btn-outline-primary">
-            <i class="bi bi-save"></i> Save Draft
+            <i class="bi bi-save"></i> Save
         </button>
         <button type="button" id="btnComplete" class="btn btn-primary">
             <i class="bi bi-check-circle"></i> Save &amp; Mark Completed
@@ -153,22 +153,59 @@
 
         // Excel-style Up/Down cell navigation: move focus to the same column in the row
         // above/below instead of the browser's native number-input spinner behavior.
-        $('.pm-entry-table').on('keydown', '.pm-f-f26, .pm-f-f27, .pm-f-week, .pm-f-month, .pm-f-ytd, .pm-f-remarks', function (e) {
-            if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+            $('.pm-entry-table').on('keydown',
+        '.pm-f-model, .pm-f-f26, .pm-f-f27, .pm-f-week, .pm-f-month, .pm-f-ytd, .pm-f-remarks',
+        function (e) {
+
+            if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key))
+                return;
+
             e.preventDefault();
 
-            var $cell = $(this);
-            var colClass = $cell.attr('class').split(/\s+/).find(function (c) { return c.indexOf('pm-f-') === 0; });
-            var $row = $cell.closest('tr');
-            var $targetRow = e.key === 'ArrowUp'
-                ? $row.prevAll('tr.pm-kpi-row').first()
-                : $row.nextAll('tr.pm-kpi-row').first();
+            var columns = [
+                'pm-f-model',
+                'pm-f-f26',
+                'pm-f-f27',
+                'pm-f-week',
+                'pm-f-month',
+                'pm-f-ytd',
+                'pm-f-remarks'
+            ];
 
-            if ($targetRow.length) {
-                var $target = $targetRow.find('.' + colClass);
-                if ($target.length) {
-                    $target.trigger('focus').select();
+            var $cell = $(this);
+            var $row = $cell.closest('tr');
+
+            var currentCol = columns.find(function (c) {
+                return $cell.hasClass(c);
+            });
+
+            var currentIndex = columns.indexOf(currentCol);
+
+            // UP / DOWN
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+
+                var $targetRow = e.key === 'ArrowUp'
+                    ? $row.prevAll('tr.pm-kpi-row').first()
+                    : $row.nextAll('tr.pm-kpi-row').first();
+
+                if ($targetRow.length) {
+                    var $target = $targetRow.find('.' + currentCol);
+                    if ($target.length) {
+                        $target.focus().select?.();
+                    }
                 }
+            }
+
+            // LEFT
+            if (e.key === 'ArrowLeft' && currentIndex > 0) {
+                var $target = $row.find('.' + columns[currentIndex - 1]);
+                $target.focus().select?.();
+            }
+
+            // RIGHT
+            if (e.key === 'ArrowRight' && currentIndex < columns.length - 1) {
+                var $target = $row.find('.' + columns[currentIndex + 1]);
+                $target.focus().select?.();
             }
         });
     </script>

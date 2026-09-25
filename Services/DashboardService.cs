@@ -65,14 +65,35 @@ public class DashboardService : IDashboardService
         }).ToList();
 
         filters.Categories = kpis
-            .Select(k => (k.Indicator.Code, k.Indicator.Name))
-            .Distinct()
-            .OrderBy(c => c.Code)
-            .ToList();
+    .Select(k => (k.Indicator.Code, k.Indicator.Name))
+    .Distinct()
+    .OrderBy(c => c.Code)
+    .ToList();
+
 
         filters.TotalCount = filters.Rows.Count;
         filters.EnteredCount = filters.Rows.Count(r => r.WeekValue.HasValue);
         filters.AttentionRequired = filters.Rows.Where(r => r.Status == "Red").Take(6).ToList();
+
+        var spr = await _db.Database
+     .SqlQuery<decimal>($@"
+        EXEC dbo.usp_GetStraightPassRatio
+            @PlantId = {filters.PlantId},
+            @LineId = {filters.LineId},
+            @WeekStart = {filters.WeekStart}")
+     .ToListAsync(cancellationToken);
+
+        filters.StraightPassRatio = spr.FirstOrDefault();
+
+        var traceability = await _db.Database
+    .SqlQuery<decimal>($@"
+        EXEC dbo.usp_GetTraceability
+            @PlantId = {filters.PlantId},
+            @LineId = {filters.LineId},
+            @WeekStart = {filters.WeekStart}")
+    .ToListAsync(cancellationToken);
+
+        filters.Traceability = traceability.FirstOrDefault();
 
         filters.Cards = BuildCards(filters);
 
@@ -124,32 +145,53 @@ public class DashboardService : IDashboardService
 
     private static List<DashboardCardViewModel> BuildCards(DashboardViewModel filters)
     {
-        var cards = new List<DashboardCardViewModel>
+        return new List<DashboardCardViewModel>
+    {
+        new()
         {
-            new()
-            {
-                Label = "This Week's Progress",
-                ValueDisplay = $"{filters.EnteredCount}/{filters.TotalCount}",
-                Status = filters.TotalCount > 0 && filters.EnteredCount == filters.TotalCount ? "good" : "warn",
-                SubText = "Indicators entered"
-            },
-            new()
-            {
-                Label = "Issues Flagged",
-                ValueDisplay = filters.Rows.Count(r => r.Status == "Red").ToString(),
-                Status = filters.Rows.Any(r => r.Status == "Red") ? "bad" : "good",
-                SubText = "Red-status KPIs"
-            },
-            new()
-            {
-                Label = "Meeting Status",
-                ValueDisplay = filters.SessionStatus,
-                Status = filters.SessionStatus == "Completed" ? "good" : "warn",
-                SubText = PmDates.WeekLabel(filters.WeekStart)
-            }
-        };
+            Label = "This Week's Progress",
+            ValueDisplay = $"{filters.EnteredCount}/{filters.TotalCount}",
+            Status = filters.TotalCount > 0 && filters.EnteredCount == filters.TotalCount ? "good" : "warn",
+            SubText = "Indicators entered"
+        },
 
-        return cards;
+        new()
+        {
+            Label = "Issues Flagged",
+            ValueDisplay = filters.Rows.Count(r => r.Status == "Red").ToString(),
+            Status = filters.Rows.Any(r => r.Status == "Red") ? "bad" : "good",
+            SubText = "Red-status KPIs"
+        },
+
+        new()
+        {
+            Label = "Meeting Status",
+            ValueDisplay = filters.SessionStatus,
+            Status = filters.SessionStatus == "Completed" ? "good" : "warn",
+            SubText = PmDates.WeekLabel(filters.WeekStart)
+        },
+
+       new()
+        {
+            Label = "Straight Pass Ratio",
+            ValueDisplay = filters.StraightPassRatio?.ToString("0.00") + "%" ?? "-",
+            Status = filters.StraightPassRatio.HasValue &&
+                     filters.StraightPassRatio.Value >= 95
+                        ? "good"
+                        : "bad",
+            SubText = PmDates.WeekLabel(filters.WeekStart)
+        },
+       new()
+        {
+            Label = "Traceability",
+            ValueDisplay = filters.Traceability?.ToString("0.00") + "%" ?? "-",
+            Status = filters.Traceability.HasValue &&
+                     filters.Traceability.Value >= 95
+                        ? "good"
+                        : "bad",
+            SubText = PmDates.WeekLabel(filters.WeekStart)
+        }
+    };
     }
 
     private static DateTime GetMonday(DateTime date)

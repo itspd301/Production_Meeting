@@ -24,6 +24,7 @@ public class DashboardKpiRowViewModel
     public decimal? YtdValue { get; set; }
     public string Status { get; set; } = "Pending"; // Green | Amber | Red | Pending | NoTarget
     public string? Remarks { get; set; }
+  
 }
 
 public class DashboardViewModel
@@ -48,4 +49,7 @@ public class DashboardViewModel
 
     public int EnteredCount { get; set; }
     public int TotalCount { get; set; }
+
+    public decimal? StraightPassRatio { get; set; }
+    public decimal? Traceability { get; set; }
 }
