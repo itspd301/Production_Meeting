@@ -27,8 +27,11 @@
             <label class="form-label">Week</label>
             <input type="week" name="week" class="form-control" value="@Model.Week" onchange="this.form.submit()" />
         </div>
-        <div class="col-sm-6 col-md-3">
+        <div class="col-sm-6 col-md-3 d-flex align-items-center justify-content-between gap-2">
             <span class="text-muted small">@PmDates.WeekLabel(Model.WeekStart)</span>
+            <a asp-action="Executive" asp-route-plantId="@Model.PlantId" asp-route-lineId="@Model.LineId" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-easel"></i> Executive View
+            </a>
         </div>
     </form>
 </div>

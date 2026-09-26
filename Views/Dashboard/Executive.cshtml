@@ -1,0 +1,373 @@
+@model ExecutiveDashboardViewModel
+@{
+    ViewData["Title"] = "Executive Dashboard";
+    var plantName = Model.Plants.FirstOrDefault(p => p.Id == Model.PlantId).Name ?? "-";
+    var lineName = Model.Lines.FirstOrDefault(l => l.Id == Model.LineId).Name ?? "-";
+    var fyStartYear = Model.WeekStart.Month >= 4 ? Model.WeekStart.Year : Model.WeekStart.Year - 1;
+    var fyLabel = $"{fyStartYear % 100:D2}-{(fyStartYear + 1) % 100:D2}";
+}
+
+@section Styles {
+    <style>
+        :root { --xd-red: #d71920; --xd-navy: #122b49; --xd-green: #2e7d32; --xd-amber: #f5a623; --xd-line: #d1d5db; --xd-muted: #6b7280; }
+        .xd-app { max-width: 1920px; margin: 0 auto; }
+        .xd-header { display: grid; grid-template-columns: 230px 1fr auto; gap: 12px; align-items: center; background: #fff; border: 1px solid var(--xd-line); border-radius: 12px; padding: 10px 14px; box-shadow: 0 2px 9px rgba(0,0,0,.05); margin-bottom: 12px; }
+        .xd-brand { height: 58px; background: linear-gradient(145deg,#b9000b,#ef1b24); color: #fff; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; }
+        .xd-title { text-align: center; }
+        .xd-title h1 { font-size: 22px; margin: 0; color: #111827; }
+        .xd-title p { margin: 4px 0 0; color: var(--xd-muted); font-size: 13px; }
+        .xd-filters { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; align-items: end; }
+        .xd-filter { min-width: 140px; }
+        .xd-filter label { font-size: 11px; color: var(--xd-muted); display: block; margin-bottom: 3px; }
+        .xd-filter select, .xd-filter input { width: 100%; padding: 7px; border: 1px solid var(--xd-line); border-radius: 7px; background: #fff; }
+        .xd-summary { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; margin-bottom: 10px; }
+        .xd-pill { background: #fff; border: 1px solid var(--xd-line); border-radius: 9px; padding: 8px 12px; text-align: center; }
+        .xd-pill b { display: block; font-size: 14px; }
+        .xd-pill span { font-size: 11px; color: var(--xd-muted); }
+        .xd-group-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: 10px; margin-bottom: 10px; }
+        .xd-group { background: #fff; border: 1px solid var(--xd-line); border-radius: 11px; overflow: hidden; }
+        .xd-group-title { padding: 7px 10px; text-align: center; color: #fff; font-weight: 700; font-size: 13px; }
+        .xd-cards { display: grid; grid-template-columns: repeat(3,1fr); }
+        .xd-kpi { position: relative; padding: 10px 8px; border-right: 1px solid #e5e7eb; border-top: 1px solid #e5e7eb; min-height: 126px; cursor: pointer; transition: .15s; }
+        .xd-kpi:hover { background: #f8fafc; box-shadow: inset 0 0 0 2px #93c5fd; }
+        .xd-kpi:nth-child(3n) { border-right: 0; }
+        .xd-kpi-name { font-size: 10.5px; font-weight: 700; min-height: 28px; text-align: center; }
+        .xd-value { text-align: center; font-weight: 800; font-size: 22px; margin: 3px; }
+        .xd-unit { text-align: center; font-size: 10px; color: var(--xd-muted); }
+        .xd-target { text-align: center; font-size: 10px; margin-top: 4px; }
+        .xd-dot { position: absolute; right: 8px; top: 58px; width: 11px; height: 11px; border-radius: 50%; }
+        .xd-dot.green, .xd-badge.green { background: var(--xd-green); }
+        .xd-dot.amber, .xd-badge.amber { background: var(--xd-amber); }
+        .xd-dot.red, .xd-badge.red { background: var(--xd-red); }
+        .xd-dot.pending, .xd-badge.pending, .xd-dot.notarget, .xd-badge.notarget { background: #9ca3af; }
+        .xd-mini { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; margin-top: 7px; border-top: 1px solid #eee; padding-top: 5px; }
+        .xd-mini div { text-align: center; font-size: 9px; }
+        .xd-mini b { display: block; font-size: 10px; }
+        .xd-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .xd-panel { background: #fff; border: 1px solid var(--xd-line); border-radius: 11px; padding: 11px; box-shadow: 0 2px 7px rgba(0,0,0,.03); }
+        .xd-panel h3 { font-size: 13px; color: var(--xd-red); text-align: center; margin: 0 0 7px; }
+        .xd-chartbox { height: 260px; }
+        .xd-narrative { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 10px; margin-bottom: 10px; }
+        .xd-note ul { margin: 5px 0 0; padding-left: 17px; font-size: 12px; line-height: 1.55; }
+        .xd-remark textarea { width: 100%; height: 84px; border: 1px solid var(--xd-line); border-radius: 8px; padding: 8px; resize: vertical; font-family: inherit; }
+        .xd-actions { display: flex; gap: 8px; margin-top: 7px; }
+        .xd-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        .xd-table th, .xd-table td { padding: 7px; border-bottom: 1px solid #e5e7eb; text-align: right; }
+        .xd-table th { background: #f8fafc; color: #374151; }
+        .xd-table th:first-child, .xd-table td:first-child, .xd-table th:nth-child(2), .xd-table td:nth-child(2) { text-align: left; }
+        .xd-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; color: #fff; font-size: 10px; }
+        .xd-footer { padding: 8px 10px; font-size: 10px; color: var(--xd-muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .xd-legend span { margin-left: 12px; }
+        .xd-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; }
+        .xd-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); align-items: center; justify-content: center; z-index: 1050; }
+        .xd-modal.open { display: flex; }
+        .xd-modal-card { width: min(640px,92vw); background: #fff; border-radius: 14px; padding: 18px; }
+        .xd-modal-head { display: flex; justify-content: space-between; align-items: start; }
+        .xd-modal-close { font-size: 24px; cursor: pointer; border: 0; background: none; line-height: 1; }
+        .xd-modal-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin: 12px 0; }
+        .xd-modal-metric { background: #f8fafc; border-radius: 8px; padding: 10px; text-align: center; }
+        .xd-modal-metric span { font-size: 10px; color: var(--xd-muted); display: block; }
+        .xd-modal-metric b { font-size: 17px; }
+        .xd-modal-chart { height: 240px; }
+        @@media (max-width: 1100px) { .xd-header { grid-template-columns: 1fr; } .xd-grid, .xd-narrative, .xd-summary { grid-template-columns: 1fr 1fr; } }
+        @@media (max-width: 720px) { .xd-grid, .xd-narrative, .xd-summary, .xd-cards { grid-template-columns: 1fr; } }
+        @@media print { .xd-filters, .xd-actions, .pm-sidebar, .pm-header { display: none !important; } }
+    </style>
+}
+
+<div class="xd-app">
+    <header class="xd-header">
+        <div class="xd-brand">Mahindra</div>
+        <div class="xd-title">
+            <h1>PLANT HEAD PRODUCTION MEETING - @plantName.ToUpper() @lineName.ToUpper()</h1>
+            <p>Weekly executive review dashboard</p>
+        </div>
+        <form method="get" class="xd-filters">
+            <div class="xd-filter">
+                <label>Plant</label>
+                <select name="plantId" onchange="this.form.submit()">
+                    @foreach (var p in Model.Plants)
+                    {
+                        <option value="@p.Id" selected="@(Model.PlantId == p.Id)">@p.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="xd-filter">
+                <label>Shop</label>
+                <select name="lineId" onchange="this.form.submit()">
+                    @foreach (var l in Model.Lines)
+                    {
+                        <option value="@l.Id" selected="@(Model.LineId == l.Id)">@l.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="xd-filter">
+                <label>Week</label>
+                <input type="week" name="week" value="@Model.Week" onchange="this.form.submit()" />
+            </div>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">Print / PDF</button>
+            <a asp-action="Index" asp-route-plantId="@Model.PlantId" asp-route-lineId="@Model.LineId" class="btn btn-primary btn-sm">Switch to Classic View</a>
+        </form>
+    </header>
+
+    @if (!Model.HasPlantAndShop)
+    {
+        <div class="xd-panel"><p class="text-muted mb-0">No plant/shop available. Ask an administrator to grant you access under User Management.</p></div>
+    }
+    else
+    {
+        <section class="xd-summary">
+            <div class="xd-pill"><span>FINANCIAL YEAR</span><b>FY@(fyLabel)</b></div>
+            <div class="xd-pill"><span>SELECTED WEEK</span><b>Week @(System.Globalization.ISOWeek.GetWeekOfYear(Model.WeekStart))</b></div>
+            <div class="xd-pill"><span>WEEK DATES</span><b>@Model.WeekStart.ToString("dd MMM") - @Model.WeekStart.AddDays(6).ToString("dd MMM yyyy")</b></div>
+            <div class="xd-pill">
+                <span>DATA STATUS</span>
+                @if (Model.TotalCount > 0 && Model.EnteredCount == Model.TotalCount)
+                {
+                    <b style="color:var(--xd-green)">&#9679; Data Complete</b>
+                }
+                else
+                {
+                    <b style="color:var(--xd-amber)">&#9679; @Model.EnteredCount / @Model.TotalCount Entered</b>
+                }
+            </div>
+            <div class="xd-pill"><span>LAST REFRESHED</span><b>@(Model.LastRefreshed.HasValue ? Model.LastRefreshed.Value.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt") : "Not started")</b></div>
+        </section>
+
+        <div class="xd-group-row">
+            @foreach (var group in Model.Groups)
+            {
+                var barColor = group.IndicatorCode switch
+                {
+                    "S" => "#d71920",
+                    "Q" => "#122b49",
+                    "C" => "#167044",
+                    "D" => "#18527a",
+                    "P" => "#5c8a3a",
+                    "SUST" => "#0f7d8c",
+                    "M" => "#b66900",
+                    _ => "#4b5563"
+                };
+                <section class="xd-group">
+                    <div class="xd-group-title" style="background:@barColor">@group.IndicatorName.ToUpper()</div>
+                    <div class="xd-cards">
+                        @foreach (var k in group.Kpis)
+                        {
+                            var dotClass = k.Status.ToLower();
+                            <div class="xd-kpi" data-kpi-id="@k.KpiId" data-kpi-name="@k.Description">
+                                <div class="xd-kpi-name">@k.Description</div>
+                                <div class="xd-unit">@k.UnitName</div>
+                                <div class="xd-value">@(k.Value?.ToString("0.##") ?? "-")</div>
+                                <div class="xd-target">Target: @(k.Target?.ToString("0.##") ?? "-")</div>
+                                <i class="xd-dot @dotClass"></i>
+                                <div class="xd-mini">
+                                    <div>WoW<b>@(k.WeekOverWeek?.ToString("0.##") ?? "-")</b></div>
+                                    <div>MTD<b>@(k.MonthCumValue?.ToString("0.##") ?? "-")</b></div>
+                                    <div>YTD<b>@(k.YtdValue?.ToString("0.##") ?? "-")</b></div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+        </div>
+
+        <section class="xd-grid">
+            <div class="xd-panel"><h3>WEEKLY TREND - QUALITY &amp; DELIVERY KPIs</h3><div class="xd-chartbox"><canvas id="trendChart"></canvas></div></div>
+            <div class="xd-panel"><h3>MANPOWER DEPLOYED</h3><div class="xd-chartbox"><canvas id="manpowerChart"></canvas></div></div>
+        </section>
+
+        <section class="xd-panel mb-3">
+            <h3>WEEKLY KPI SUMMARY</h3>
+            <div style="overflow:auto">
+                <table class="xd-table">
+                    <thead>
+                        <tr><th>Category</th><th>KPI</th><th>Unit</th><th>Target</th><th>Week</th><th>Status</th><th>Prev.</th><th>&Delta;</th><th>MTD</th><th>YTD</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var group in Model.Groups)
+                        {
+                            foreach (var k in group.Kpis)
+                            {
+                                <tr>
+                                    <td>@group.IndicatorName</td>
+                                    <td>@k.Description</td>
+                                    <td>@k.UnitName</td>
+                                    <td>@(k.Target?.ToString("0.##") ?? "-")</td>
+                                    <td>@(k.Value?.ToString("0.##") ?? "-")</td>
+                                    <td><span class="xd-badge @k.Status.ToLower()">@k.Status</span></td>
+                                    <td>@(k.PreviousValue?.ToString("0.##") ?? "-")</td>
+                                    <td>@(k.WeekOverWeek?.ToString("0.##") ?? "-")</td>
+                                    <td>@(k.MonthCumValue?.ToString("0.##") ?? "-")</td>
+                                    <td>@(k.YtdValue?.ToString("0.##") ?? "-")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="xd-narrative">
+            <div class="xd-panel xd-note">
+                <h3 style="color:var(--xd-green);text-align:left">HIGHLIGHTS</h3>
+                @if (Model.Highlights.Count == 0)
+                {
+                    <p class="text-muted small mb-0">No KPIs on target yet this week.</p>
+                }
+                else
+                {
+                    <ul>
+                        @foreach (var h in Model.Highlights)
+                        {
+                            <li>@h.Description: @(h.Value?.ToString("0.##")) against @(h.Target?.ToString("0.##")) target.</li>
+                        }
+                    </ul>
+                }
+            </div>
+            <div class="xd-panel xd-note">
+                <h3 style="text-align:left">LOWLIGHTS</h3>
+                @if (Model.Lowlights.Count == 0)
+                {
+                    <p class="text-muted small mb-0">No red-status KPIs this week.</p>
+                }
+                else
+                {
+                    <ul>
+                        @foreach (var l in Model.Lowlights)
+                        {
+                            <li>@l.Description: @(l.Value?.ToString("0.##")) against @(l.Target?.ToString("0.##")) target.</li>
+                        }
+                    </ul>
+                }
+            </div>
+            <div class="xd-panel xd-remark">
+                <h3 style="color:var(--xd-navy);text-align:left">REMARKS - THIS WEEK</h3>
+                <textarea id="remarksText" @(Model.CanEditRemarks && Model.SessionId.HasValue ? "" : "readonly")>@Model.SessionRemarks</textarea>
+                @if (Model.CanEditRemarks && Model.SessionId.HasValue)
+                {
+                    <div class="xd-actions">
+                        <button class="btn btn-primary btn-sm" onclick="saveRemarks()">Save Remarks</button>
+                    </div>
+                }
+                else if (!Model.SessionId.HasValue)
+                {
+                    <p class="text-muted small mt-2 mb-0">Start this week's meeting first to add remarks.</p>
+                }
+            </div>
+        </section>
+
+        <div class="xd-footer">
+            <span>Figures reflect data entered through Production Meeting for the selected plant, shop and week.</span>
+            <span class="xd-legend">
+                <span><i style="background:var(--xd-green)"></i>Achieved</span>
+                <span><i style="background:var(--xd-amber)"></i>At Risk</span>
+                <span><i style="background:var(--xd-red)"></i>Not Achieved</span>
+            </span>
+        </div>
+    }
+</div>
+
+<div class="xd-modal" id="xdModal">
+    <div class="xd-modal-card">
+        <div class="xd-modal-head">
+            <h4 id="xdModalTitle" class="mb-0"></h4>
+            <button type="button" class="xd-modal-close" onclick="closeKpiModal()">&times;</button>
+        </div>
+        <div class="xd-modal-grid" id="xdModalMetrics"></div>
+        <div class="xd-modal-chart"><canvas id="xdModalChart"></canvas></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script>
+        var trendLabels = @Html.Raw(Json.Serialize(Model.TrendWeekLabels));
+        var trendSeries = @Html.Raw(Json.Serialize(Model.TrendSeries));
+        var manpowerSeries = @Html.Raw(Json.Serialize(Model.ManpowerSeries));
+        var palette = ['#d71920', '#122b49', '#2e7d32', '#8e44ad', '#f5a623', '#0f7d8c'];
+
+        function makeChart(id, labels, series, type) {
+            var el = document.getElementById(id);
+            if (!el || !labels || !labels.length) return;
+            new Chart(el, {
+                type: type || 'line',
+                data: {
+                    labels: labels,
+                    datasets: series.map(function (s, i) {
+                        return {
+                            label: s.label,
+                            data: s.values,
+                            borderColor: palette[i % palette.length],
+                            backgroundColor: palette[i % palette.length],
+                            tension: .3
+                        };
+                    })
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { boxWidth: 10, font: { size: 10 } } } } }
+            });
+        }
+
+        makeChart('trendChart', trendLabels, trendSeries, 'line');
+        makeChart('manpowerChart', trendLabels, manpowerSeries, 'bar');
+
+        $('.xd-kpi').on('click', function () {
+            openKpiModal($(this).data('kpi-id'), $(this).data('kpi-name'));
+        });
+
+        var xdModalChart;
+        function openKpiModal(kpiId, name) {
+            document.getElementById('xdModalTitle').textContent = name;
+            document.getElementById('xdModal').classList.add('open');
+
+            pmFetch('@Url.Action("GetKpiTrend")?kpiId=' + kpiId + '&plantId=@Model.PlantId&lineId=@Model.LineId&week=@Model.Week')
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    var last = data.points.length ? data.points[data.points.length - 1].value : null;
+                    var prev = data.points.length > 1 ? data.points[data.points.length - 2].value : null;
+                    document.getElementById('xdModalMetrics').innerHTML = [
+                        ['Current', last != null ? last : '-'],
+                        ['Target', data.target != null ? data.target : '-'],
+                        ['Previous', prev != null ? prev : '-'],
+                        ['Unit', data.unitName]
+                    ].map(function (x) {
+                        return '<div class="xd-modal-metric"><span>' + x[0] + '</span><b>' + x[1] + '</b></div>';
+                    }).join('');
+
+                    if (xdModalChart) xdModalChart.destroy();
+                    xdModalChart = new Chart(document.getElementById('xdModalChart'), {
+                        type: 'line',
+                        data: {
+                            labels: data.points.map(function (p) { return p.weekLabel; }),
+                            datasets: [
+                                { label: name, data: data.points.map(function (p) { return p.value; }), borderColor: '#d71920', backgroundColor: '#d71920', tension: .3 },
+                                { label: 'Target', data: data.points.map(function () { return data.target; }), borderColor: '#2e7d32', borderDash: [6, 5], pointRadius: 0 }
+                            ]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false }
+                    });
+                });
+        }
+
+        function closeKpiModal() {
+            document.getElementById('xdModal').classList.remove('open');
+        }
+
+        document.getElementById('xdModal').addEventListener('click', function (e) {
+            if (e.target.id === 'xdModal') closeKpiModal();
+        });
+
+        function saveRemarks() {
+            pmFetch('@Url.Action("SaveRemarks")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'sessionId=@Model.SessionId&remarks=' + encodeURIComponent(document.getElementById('remarksText').value)
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (res) {
+                    if (res.success) toastr.success(res.message);
+                    else toastr.error(res.message);
+                });
+        }
+    </script>
+}

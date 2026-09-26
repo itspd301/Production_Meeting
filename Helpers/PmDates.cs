@@ -36,15 +36,22 @@ public static class PmDates
         return ISOWeek.ToDateTime(year, week, DayOfWeek.Monday);
     }
 
-    // A week always runs Monday through Sunday (ISO 8601). Snaps to that week's Monday
-    // first rather than trusting the caller already passed one, so the label is always
-    // the full 7-day range regardless of which day of the week is passed in.
-    public static string WeekLabel(DateTime date)
+    // Snaps any date to the Monday of its ISO week. This is the single source of truth for
+    // "what Monday does this date belong to" - every place that needs a week-aligned date
+    // (session lookups, week labels, defaulting to "this week") must go through this rather
+    // than trusting a date was already normalized, or re-deriving Monday its own way.
+    public static DateTime GetMondayOfWeek(DateTime date)
     {
         var week = ISOWeek.GetWeekOfYear(date);
         var year = ISOWeek.GetYear(date);
-        var monday = ISOWeek.ToDateTime(year, week, DayOfWeek.Monday);
+        return ISOWeek.ToDateTime(year, week, DayOfWeek.Monday);
+    }
+
+    // A week always runs Monday through Sunday (ISO 8601).
+    public static string WeekLabel(DateTime date)
+    {
+        var monday = GetMondayOfWeek(date);
         var sunday = monday.AddDays(6);
-        return $"Week {week}, {year} ({monday:dd-MMM} - {sunday:dd-MMM})";
+        return $"Week {ISOWeek.GetWeekOfYear(monday)}, {ISOWeek.GetYear(monday)} ({monday:dd-MMM} - {sunday:dd-MMM})";
     }
 }

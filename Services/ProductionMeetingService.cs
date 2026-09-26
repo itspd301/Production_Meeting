@@ -1,6 +1,7 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using ProductionMeeting.Data;
+using ProductionMeeting.Helpers;
 using ProductionMeeting.Models;
 using ProductionMeeting.ViewModels.ProductionMeeting;
 
@@ -99,7 +100,10 @@ public class ProductionMeetingService : IProductionMeetingService
             return null;
         }
 
-        var date = meetingDate.Date;
+        // Always snap to that week's Monday here, at the source, rather than trusting every
+        // caller already passed one - a session keyed to the wrong day would be invisible
+        // to both dashboards, which always look sessions up by the week's Monday.
+        var date = PmDates.GetMondayOfWeek(meetingDate);
 
         var session = await _db.MeetingSessions
             .FirstOrDefaultAsync(s => s.PlantId == plantId && s.LineId == lineId && s.ShiftId == shiftId && s.MeetingDate == date, cancellationToken);

@@ -34,7 +34,7 @@ public class DashboardService : IDashboardService
             if (filters.LineId == 0) filters.LineId = null;
         }
 
-        filters.WeekStart = PmDates.FromWeekInputValue(filters.Week) ?? GetMonday(DateTime.Today);
+        filters.WeekStart = PmDates.FromWeekInputValue(filters.Week) ?? PmDates.GetMondayOfWeek(DateTime.Today);
         filters.Week = PmDates.ToWeekInputValue(filters.WeekStart);
 
         filters.HasPlantAndShop = filters.PlantId.HasValue && filters.LineId.HasValue;
@@ -109,29 +109,7 @@ public class DashboardService : IDashboardService
             Remarks = tx?.Remarks
         };
 
-        if (!row.WeekValue.HasValue)
-        {
-            row.Status = "Pending";
-        }
-        else if (!row.Target.HasValue)
-        {
-            row.Status = "NoTarget";
-        }
-        else
-        {
-            row.Variance = row.WeekValue - row.Target;
-            var good = k.LowerIsBetter ? row.WeekValue <= row.Target : row.WeekValue >= row.Target;
-
-            if (good)
-            {
-                row.Status = "Green";
-            }
-            else
-            {
-                var tolerance = Math.Abs(row.Target.Value) * 0.05m;
-                row.Status = Math.Abs(row.Variance.Value) <= tolerance ? "Amber" : "Red";
-            }
-        }
+        (row.Status, row.Variance) = KpiStatusCalculator.Compute(k.LowerIsBetter, row.WeekValue, row.Target);
 
         return row;
     }
@@ -193,11 +171,5 @@ public class DashboardService : IDashboardService
             _logger.LogWarning(ex, "Could not fetch {Label} (stored procedure missing or failed) - showing as unavailable.", label);
             return null;
         }
-    }
-
-    private static DateTime GetMonday(DateTime date)
-    {
-        var diff = (7 + (date.DayOfWeek - DayOfWeek.Monday)) % 7;
-        return date.AddDays(-diff).Date;
     }
 }

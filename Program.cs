@@ -51,6 +51,7 @@ builder.Services
 builder.Services.AddTransient<IClaimsTransformation, WindowsUserClaimsTransformation>();
 
 builder.Services.AddScoped<ProductionMeeting.Services.IDashboardService, ProductionMeeting.Services.DashboardService>();
+builder.Services.AddScoped<ProductionMeeting.Services.IExecutiveDashboardService, ProductionMeeting.Services.ExecutiveDashboardService>();
 builder.Services.AddScoped<ProductionMeeting.Services.IUserAccessService, ProductionMeeting.Services.UserAccessService>();
 builder.Services.AddScoped<ProductionMeeting.Services.IProductionMeetingService, ProductionMeeting.Services.ProductionMeetingService>();
 builder.Services.AddScoped<ProductionMeeting.Services.IUserManagementService, ProductionMeeting.Services.UserManagementService>();
