@@ -3,8 +3,6 @@
     ViewData["Title"] = "Executive Dashboard";
     var plantName = Model.Plants.FirstOrDefault(p => p.Id == Model.PlantId).Name ?? "-";
     var lineName = Model.Lines.FirstOrDefault(l => l.Id == Model.LineId).Name ?? "-";
-    var fyStartYear = Model.WeekStart.Month >= 4 ? Model.WeekStart.Year : Model.WeekStart.Year - 1;
-    var fyLabel = $"{fyStartYear % 100:D2}-{(fyStartYear + 1) % 100:D2}";
 }
 
 @section Styles {
@@ -133,6 +131,10 @@
         .xd-modal-chart { height: 240px; }
 
         .xd-empty { text-align: center; color: var(--xd-muted); font-size: 12.5px; padding: 30px 10px; }
+        .xd-sample-tag {
+            font-size: 9px; font-weight: 700; color: #fff; background: #9aa4af; padding: 2px 9px;
+            border-radius: 999px; letter-spacing: .04em; text-transform: uppercase; vertical-align: middle;
+        }
 
         @@media (max-width: 1300px) { .xd-grid { grid-template-columns: 1fr 1fr; } }
         @@media (max-width: 1100px) { .xd-header { grid-template-columns: 1fr; text-align: center; } .xd-filters { justify-content: center; } .xd-grid, .xd-narrative, .xd-summary { grid-template-columns: 1fr 1fr; } }
@@ -182,22 +184,13 @@
     }
     else
     {
+        <div class="text-end mb-1"><span class="xd-sample-tag">Sample data - pending SP</span></div>
         <section class="xd-summary">
-            <div class="xd-pill"><span>Financial Year</span><b>FY@(fyLabel)</b></div>
-            <div class="xd-pill"><span>Selected Week</span><b>Week @(System.Globalization.ISOWeek.GetWeekOfYear(Model.WeekStart))</b></div>
-            <div class="xd-pill"><span>Week Dates</span><b>@Model.WeekStart.ToString("dd MMM") - @Model.WeekStart.AddDays(6).ToString("dd MMM yyyy")</b></div>
-            <div class="xd-pill">
-                <span>Data Status</span>
-                @if (Model.TotalCount > 0 && Model.EnteredCount == Model.TotalCount)
-                {
-                    <b style="color:var(--xd-green)">&#9679; Data Complete</b>
-                }
-                else
-                {
-                    <b style="color:var(--xd-amber)">&#9679; @Model.EnteredCount / @Model.TotalCount Entered</b>
-                }
-            </div>
-            <div class="xd-pill"><span>Last Refreshed</span><b>@(Model.LastRefreshed.HasValue ? Model.LastRefreshed.Value.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt") : "Not started")</b></div>
+            <div class="xd-pill"><span>Financial Year</span><b>@Model.SummaryFyLabel</b></div>
+            <div class="xd-pill"><span>Selected Week</span><b>@Model.SummaryWeekLabel</b></div>
+            <div class="xd-pill"><span>Week Dates</span><b>@Model.SummaryWeekDates</b></div>
+            <div class="xd-pill"><span>Data Status</span><b style="color:var(--xd-green)">&#9679; @Model.SummaryDataStatus</b></div>
+            <div class="xd-pill"><span>Last Refreshed</span><b>@Model.SummaryLastRefreshed</b></div>
         </section>
 
         <div class="xd-group-row">
@@ -239,9 +232,9 @@
         </div>
 
         <section class="xd-grid">
-            <div class="xd-panel"><h3><i class="bi bi-graph-up"></i> Weekly Trend &mdash; Quality &amp; Delivery</h3><div class="xd-chartbox"><canvas id="trendChart"></canvas></div></div>
+            <div class="xd-panel"><h3><i class="bi bi-graph-up"></i> Weekly Trend &mdash; Quality &amp; Delivery <span class="xd-sample-tag">Sample</span></h3><div class="xd-chartbox"><canvas id="trendChart"></canvas></div></div>
             <div class="xd-panel">
-                <h3><i class="bi bi-bar-chart-steps"></i> Top 5 Rework Defects &mdash; This Week</h3>
+                <h3><i class="bi bi-bar-chart-steps"></i> Top 5 Rework Defects &mdash; This Week <span class="xd-sample-tag">Sample</span></h3>
                 @if (Model.TopDefects.Count == 0)
                 {
                     <div class="xd-empty">
@@ -254,7 +247,7 @@
                     <div class="xd-chartbox"><canvas id="defectChart"></canvas></div>
                 }
             </div>
-            <div class="xd-panel"><h3><i class="bi bi-people"></i> Manpower Deployed</h3><div class="xd-chartbox"><canvas id="manpowerChart"></canvas></div></div>
+            <div class="xd-panel"><h3><i class="bi bi-people"></i> Manpower Deployed <span class="xd-sample-tag">Sample</span></h3><div class="xd-chartbox"><canvas id="manpowerChart"></canvas></div></div>
         </section>
 
         <section class="xd-panel mb-3">
@@ -290,7 +283,7 @@
 
         <section class="xd-narrative">
             <div class="xd-panel xd-note">
-                <h3 style="color:var(--xd-green);text-align:left;border-bottom-color:transparent"><i class="bi bi-check-circle"></i> Highlights</h3>
+                <h3 style="color:var(--xd-green);text-align:left;border-bottom-color:transparent"><i class="bi bi-check-circle"></i> Highlights <span class="xd-sample-tag">Sample</span></h3>
                 @if (Model.Highlights.Count == 0)
                 {
                     <p class="text-muted small mb-0">No KPIs on target yet this week.</p>
@@ -306,7 +299,7 @@
                 }
             </div>
             <div class="xd-panel xd-note">
-                <h3 style="color:var(--xd-red);text-align:left;border-bottom-color:transparent"><i class="bi bi-exclamation-triangle"></i> Lowlights</h3>
+                <h3 style="color:var(--xd-red);text-align:left;border-bottom-color:transparent"><i class="bi bi-exclamation-triangle"></i> Lowlights <span class="xd-sample-tag">Sample</span></h3>
                 @if (Model.Lowlights.Count == 0)
                 {
                     <p class="text-muted small mb-0">No red-status KPIs this week.</p>

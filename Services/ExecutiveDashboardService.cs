@@ -54,13 +54,6 @@ public class ExecutiveDashboardService : IExecutiveDashboardService
             .OrderByDescending(s => s.MeetingDate)
             .FirstOrDefaultAsync(cancellationToken);
 
-        var historySessions = await _db.MeetingSessions
-            .Where(s => s.PlantId == plantId && s.LineId == lineId && s.MeetingDate <= filters.WeekStart)
-            .OrderByDescending(s => s.MeetingDate)
-            .Take(TrendWeeks)
-            .ToListAsync(cancellationToken);
-        historySessions.Reverse();
-
         filters.SessionId = currentSession?.SessionId;
         filters.SessionStatus = currentSession?.Status == MeetingSessionStatus.Completed ? "Completed" : "Draft";
         filters.SessionRemarks = currentSession?.Remarks;
@@ -73,15 +66,12 @@ public class ExecutiveDashboardService : IExecutiveDashboardService
             .OrderBy(k => k.Indicator.IndicatorId).ThenBy(k => k.DisplayOrder)
             .ToListAsync(cancellationToken);
 
-        var historySessionIds = historySessions.Select(s => s.SessionId).ToList();
-        var allTransactions = await _db.KpiTransactions
-            .Where(t => historySessionIds.Contains(t.SessionId))
-            .ToListAsync(cancellationToken);
-
-        var currentTx = currentSession == null ? new List<KpiTransaction>() : allTransactions.Where(t => t.SessionId == currentSession.SessionId).ToList();
-        var previousTx = previousSession == null ? new List<KpiTransaction>() : allTransactions.Where(t => t.SessionId == previousSession.SessionId).ToList();
-
-        var allCards = new List<ExecutiveKpiCardViewModel>();
+        var currentTx = currentSession == null
+            ? new List<KpiTransaction>()
+            : await _db.KpiTransactions.Where(t => t.SessionId == currentSession.SessionId).ToListAsync(cancellationToken);
+        var previousTx = previousSession == null
+            ? new List<KpiTransaction>()
+            : await _db.KpiTransactions.Where(t => t.SessionId == previousSession.SessionId).ToListAsync(cancellationToken);
 
         filters.Groups = kpis
             .GroupBy(k => k.Indicator)
@@ -108,62 +98,64 @@ public class ExecutiveDashboardService : IExecutiveDashboardService
                         Status = status,
                         Variance = variance
                     };
-                    allCards.Add(card);
                     return card;
                 }).ToList()
             }).ToList();
 
-        filters.TotalCount = allCards.Count;
-        filters.EnteredCount = allCards.Count(c => c.Value.HasValue);
+        filters.TotalCount = filters.Groups.Sum(g => g.Kpis.Count);
+        filters.EnteredCount = filters.Groups.Sum(g => g.Kpis.Count(c => c.Value.HasValue));
 
-        filters.Highlights = allCards.Where(c => c.Status == "Green").Take(4).ToList();
-        filters.Lowlights = allCards.Where(c => c.Status == "Red")
-            .OrderByDescending(c => Math.Abs(c.Variance ?? 0))
-            .Take(4)
-            .ToList();
-
-        filters.TrendWeekLabels = historySessions.Select(s => $"W{ISOWeekNumber(s.MeetingDate)}").ToList();
-
-        var trendKpis = kpis
-            .Where(k => k.Indicator.Code == "Q" || k.Indicator.Code == "D")
-            .OrderBy(k => k.DisplayOrder)
-            .Take(4)
-            .ToList();
-
-        filters.TrendSeries = trendKpis.Select(k => new ExecutiveTrendSeriesViewModel
-        {
-            Label = k.Description,
-            Values = historySessions.Select(s => allTransactions.FirstOrDefault(t => t.SessionId == s.SessionId && t.KpiId == k.KpiId)?.WeekValue).ToList()
-        }).ToList();
-
-        var manpowerKpis = kpis.Where(k => k.Description.Contains("Manpower", StringComparison.OrdinalIgnoreCase)).ToList();
-        filters.ManpowerSeries = manpowerKpis.Select(k => new ExecutiveTrendSeriesViewModel
-        {
-            Label = k.Description,
-            Values = historySessions.Select(s => allTransactions.FirstOrDefault(t => t.SessionId == s.SessionId && t.KpiId == k.KpiId)?.WeekValue).ToList()
-        }).ToList();
-
-        var reworkKpiIds = kpis
-            .Where(k => k.Description.Contains("Rework", StringComparison.OrdinalIgnoreCase))
-            .Select(k => k.KpiId)
-            .ToHashSet();
-
-        var defectCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        foreach (var tx in currentTx.Where(t => reworkKpiIds.Contains(t.KpiId)))
-        {
-            foreach (var (name, count) in DefectParser.Parse(tx.Remarks))
-            {
-                defectCounts[name] = defectCounts.GetValueOrDefault(name) + count;
-            }
-        }
-
-        filters.TopDefects = defectCounts
-            .OrderByDescending(kv => kv.Value)
-            .Take(5)
-            .Select(kv => (kv.Key, kv.Value))
-            .ToList();
+        ApplyStaticPlaceholders(filters);
 
         return filters;
+    }
+
+    // Summary pills, charts and narrative are placeholders until their own stored
+    // procedures are wired up (same pattern as DashboardService.TryGetScalarAsync for the
+    // Straight Pass Ratio / Traceability cards). Replace each assignment below with a real
+    // SP-backed value as those become available - the KPI cards and Weekly KPI Summary
+    // table built above already use real data and don't need to change.
+    private static void ApplyStaticPlaceholders(ExecutiveDashboardViewModel filters)
+    {
+        filters.SummaryFyLabel = "FY 25-26";
+        filters.SummaryWeekLabel = "Week 32";
+        filters.SummaryWeekDates = "04 Aug - 10 Aug 2025";
+        filters.SummaryDataStatus = "Data Complete";
+        filters.SummaryLastRefreshed = "04 Aug 2025, 06:45 PM";
+
+        filters.TrendWeekLabels = ["W27", "W28", "W29", "W30", "W31", "W32"];
+        filters.TrendSeries =
+        [
+            new ExecutiveTrendSeriesViewModel { Label = "Rejection Rate %", Values = [3.2m, 2.9m, 2.6m, 2.4m, 2.1m, 1.9m] },
+            new ExecutiveTrendSeriesViewModel { Label = "On-Time Delivery %", Values = [92m, 93m, 94m, 95m, 96m, 97m] }
+        ];
+        filters.ManpowerSeries =
+        [
+            new ExecutiveTrendSeriesViewModel { Label = "Manpower Deployed", Values = [180m, 178m, 182m, 179m, 181m, 180m] }
+        ];
+        filters.TopDefects =
+        [
+            ("DDS", 150),
+            ("K frame/cradle bolt half torque", 63),
+            ("Paint chip", 42),
+            ("Wiring harness clip", 28),
+            ("Door fitment gap", 19)
+        ];
+
+        filters.Highlights =
+        [
+            new ExecutiveKpiCardViewModel { Description = "Safety - Near Miss Reporting", UnitName = "Nos", Value = 12m, Target = 10m },
+            new ExecutiveKpiCardViewModel { Description = "Quality - First Time Right", UnitName = "%", Value = 97.4m, Target = 96m },
+            new ExecutiveKpiCardViewModel { Description = "Delivery - On-Time Dispatch", UnitName = "%", Value = 98.1m, Target = 97m },
+            new ExecutiveKpiCardViewModel { Description = "Cost - Scrap Cost", UnitName = "Rs. Lacs", Value = 2.1m, Target = 2.5m }
+        ];
+        filters.Lowlights =
+        [
+            new ExecutiveKpiCardViewModel { Description = "Quality - Rework RPT", UnitName = "Nos", Value = 245m, Target = 100m },
+            new ExecutiveKpiCardViewModel { Description = "Production - Line Downtime", UnitName = "Hrs", Value = 6.5m, Target = 3m },
+            new ExecutiveKpiCardViewModel { Description = "Cost - Overtime Cost", UnitName = "Rs. Lacs", Value = 4.2m, Target = 3m },
+            new ExecutiveKpiCardViewModel { Description = "Morale - Absenteeism", UnitName = "%", Value = 5.8m, Target = 3m }
+        ];
     }
 
     public async Task<ServiceResult> SaveRemarksAsync(int sessionId, string? remarks, string userId, CancellationToken cancellationToken = default)

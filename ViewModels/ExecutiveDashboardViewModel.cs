@@ -48,11 +48,18 @@ public class ExecutiveDashboardViewModel
 
     public List<ExecutiveIndicatorGroupViewModel> Groups { get; set; } = new();
 
+    // Summary pills, charts and narrative below are placeholder/sample data pending
+    // stored-procedure integration (see ExecutiveDashboardService.ApplyStaticPlaceholders).
+    // The KPI cards above and the Weekly KPI Summary table are real, live data.
+    public string SummaryFyLabel { get; set; } = "";
+    public string SummaryWeekLabel { get; set; } = "";
+    public string SummaryWeekDates { get; set; } = "";
+    public string SummaryDataStatus { get; set; } = "";
+    public string SummaryLastRefreshed { get; set; } = "";
+
     public List<string> TrendWeekLabels { get; set; } = new();
     public List<ExecutiveTrendSeriesViewModel> TrendSeries { get; set; } = new();
     public List<ExecutiveTrendSeriesViewModel> ManpowerSeries { get; set; } = new();
-
-    // Parsed from the Rework KPIs' Remarks for the current week (see DefectParser).
     public List<(string Name, int Count)> TopDefects { get; set; } = new();
 
     public List<ExecutiveKpiCardViewModel> Highlights { get; set; } = new();
