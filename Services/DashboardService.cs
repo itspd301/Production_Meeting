@@ -10,11 +10,13 @@ public class DashboardService : IDashboardService
 {
     private readonly ApplicationDbContext _db;
     private readonly IUserAccessService _accessService;
+    private readonly ILogger<DashboardService> _logger;
 
-    public DashboardService(ApplicationDbContext db, IUserAccessService accessService)
+    public DashboardService(ApplicationDbContext db, IUserAccessService accessService, ILogger<DashboardService> logger)
     {
         _db = db;
         _accessService = accessService;
+        _logger = logger;
     }
 
     public async Task<DashboardViewModel> GetDashboardAsync(DashboardViewModel filters, string userId, bool isAdmin, CancellationToken cancellationToken = default)
@@ -75,25 +77,16 @@ public class DashboardService : IDashboardService
         filters.EnteredCount = filters.Rows.Count(r => r.WeekValue.HasValue);
         filters.AttentionRequired = filters.Rows.Where(r => r.Status == "Red").Take(6).ToList();
 
-        var spr = await _db.Database
-     .SqlQuery<decimal>($@"
-        EXEC dbo.usp_GetStraightPassRatio
-            @PlantId = {filters.PlantId},
-            @LineId = {filters.LineId},
-            @WeekStart = {filters.WeekStart}")
-     .ToListAsync(cancellationToken);
+        // These stored procedures live outside this codebase (added directly to the
+        // database per-plant) - a missing/failing one must never take down the whole
+        // dashboard, so each is fetched defensively and just shows as unavailable on error.
+        filters.StraightPassRatio = await TryGetScalarAsync(
+            $@"EXEC dbo.usp_GetStraightPassRatio @PlantId = {filters.PlantId}, @LineId = {filters.LineId}, @WeekStart = {filters.WeekStart}",
+            "Straight Pass Ratio", cancellationToken);
 
-        filters.StraightPassRatio = spr.FirstOrDefault();
-
-        var traceability = await _db.Database
-    .SqlQuery<decimal>($@"
-        EXEC dbo.usp_GetTraceability
-            @PlantId = {filters.PlantId},
-            @LineId = {filters.LineId},
-            @WeekStart = {filters.WeekStart}")
-    .ToListAsync(cancellationToken);
-
-        filters.Traceability = traceability.FirstOrDefault();
+        filters.Traceability = await TryGetScalarAsync(
+            $@"EXEC dbo.usp_GetTraceability @PlantId = {filters.PlantId}, @LineId = {filters.LineId}, @WeekStart = {filters.WeekStart}",
+            "Traceability", cancellationToken);
 
         filters.Cards = BuildCards(filters);
 
@@ -174,24 +167,32 @@ public class DashboardService : IDashboardService
        new()
         {
             Label = "Straight Pass Ratio",
-            ValueDisplay = filters.StraightPassRatio?.ToString("0.00") + "%" ?? "-",
-            Status = filters.StraightPassRatio.HasValue &&
-                     filters.StraightPassRatio.Value >= 95
-                        ? "good"
-                        : "bad",
+            ValueDisplay = filters.StraightPassRatio.HasValue ? $"{filters.StraightPassRatio.Value:0.00}%" : "-",
+            Status = !filters.StraightPassRatio.HasValue ? "neutral" : filters.StraightPassRatio.Value >= 95 ? "good" : "bad",
             SubText = PmDates.WeekLabel(filters.WeekStart)
         },
        new()
         {
             Label = "Traceability",
-            ValueDisplay = filters.Traceability?.ToString("0.00") + "%" ?? "-",
-            Status = filters.Traceability.HasValue &&
-                     filters.Traceability.Value >= 95
-                        ? "good"
-                        : "bad",
+            ValueDisplay = filters.Traceability.HasValue ? $"{filters.Traceability.Value:0.00}%" : "-",
+            Status = !filters.Traceability.HasValue ? "neutral" : filters.Traceability.Value >= 95 ? "good" : "bad",
             SubText = PmDates.WeekLabel(filters.WeekStart)
         }
     };
+    }
+
+    private async Task<decimal?> TryGetScalarAsync(FormattableString sql, string label, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var results = await _db.Database.SqlQuery<decimal>(sql).ToListAsync(cancellationToken);
+            return results.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not fetch {Label} (stored procedure missing or failed) - showing as unavailable.", label);
+            return null;
+        }
     }
 
     private static DateTime GetMonday(DateTime date)
