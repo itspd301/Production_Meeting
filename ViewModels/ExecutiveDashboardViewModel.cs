@@ -52,6 +52,9 @@ public class ExecutiveDashboardViewModel
     public List<ExecutiveTrendSeriesViewModel> TrendSeries { get; set; } = new();
     public List<ExecutiveTrendSeriesViewModel> ManpowerSeries { get; set; } = new();
 
+    // Parsed from the Rework KPIs' Remarks for the current week (see DefectParser).
+    public List<(string Name, int Count)> TopDefects { get; set; } = new();
+
     public List<ExecutiveKpiCardViewModel> Highlights { get; set; } = new();
     public List<ExecutiveKpiCardViewModel> Lowlights { get; set; } = new();
 

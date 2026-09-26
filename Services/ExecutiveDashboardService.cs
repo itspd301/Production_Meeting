@@ -143,6 +143,26 @@ public class ExecutiveDashboardService : IExecutiveDashboardService
             Values = historySessions.Select(s => allTransactions.FirstOrDefault(t => t.SessionId == s.SessionId && t.KpiId == k.KpiId)?.WeekValue).ToList()
         }).ToList();
 
+        var reworkKpiIds = kpis
+            .Where(k => k.Description.Contains("Rework", StringComparison.OrdinalIgnoreCase))
+            .Select(k => k.KpiId)
+            .ToHashSet();
+
+        var defectCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var tx in currentTx.Where(t => reworkKpiIds.Contains(t.KpiId)))
+        {
+            foreach (var (name, count) in DefectParser.Parse(tx.Remarks))
+            {
+                defectCounts[name] = defectCounts.GetValueOrDefault(name) + count;
+            }
+        }
+
+        filters.TopDefects = defectCounts
+            .OrderByDescending(kv => kv.Value)
+            .Take(5)
+            .Select(kv => (kv.Key, kv.Value))
+            .ToList();
+
         return filters;
     }
 

@@ -9,67 +9,133 @@
 
 @section Styles {
     <style>
-        :root { --xd-red: #d71920; --xd-navy: #122b49; --xd-green: #2e7d32; --xd-amber: #f5a623; --xd-line: #d1d5db; --xd-muted: #6b7280; }
-        .xd-app { max-width: 1920px; margin: 0 auto; }
-        .xd-header { display: grid; grid-template-columns: 230px 1fr auto; gap: 12px; align-items: center; background: #fff; border: 1px solid var(--xd-line); border-radius: 12px; padding: 10px 14px; box-shadow: 0 2px 9px rgba(0,0,0,.05); margin-bottom: 12px; }
-        .xd-brand { height: 58px; background: linear-gradient(145deg,#b9000b,#ef1b24); color: #fff; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; }
+        :root {
+            --xd-red: #d71920; --xd-red-dark: #a71219; --xd-navy: #122b49; --xd-navy-light: #1e4269;
+            --xd-green: #1e8e5a; --xd-amber: #c98a1f; --xd-line: #e4e8ee; --xd-muted: #6b7785;
+            --xd-bg: #eef1f6; --xd-shadow: 0 3px 14px rgba(18, 43, 73, .07);
+        }
+        .xd-app { max-width: 1920px; margin: 0 auto; background: var(--xd-bg); padding: 4px 4px 20px; border-radius: 16px; }
+
+        .xd-header {
+            display: grid; grid-template-columns: 220px 1fr auto; gap: 16px; align-items: center;
+            background: linear-gradient(135deg, #fff 0%, #f7f9fc 100%); border: 1px solid var(--xd-line);
+            border-radius: 16px; padding: 14px 20px; box-shadow: var(--xd-shadow); margin-bottom: 16px;
+        }
+        .xd-brand {
+            height: 62px; background: linear-gradient(145deg,#ef1b24,#a71219); color: #fff; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 20px; font-weight: 800;
+            letter-spacing: .3px; box-shadow: 0 6px 16px rgba(167,18,25,.28);
+        }
+        .xd-brand i { font-size: 26px; }
         .xd-title { text-align: center; }
-        .xd-title h1 { font-size: 22px; margin: 0; color: #111827; }
-        .xd-title p { margin: 4px 0 0; color: var(--xd-muted); font-size: 13px; }
-        .xd-filters { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; align-items: end; }
-        .xd-filter { min-width: 140px; }
-        .xd-filter label { font-size: 11px; color: var(--xd-muted); display: block; margin-bottom: 3px; }
-        .xd-filter select, .xd-filter input { width: 100%; padding: 7px; border: 1px solid var(--xd-line); border-radius: 7px; background: #fff; }
-        .xd-summary { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; margin-bottom: 10px; }
-        .xd-pill { background: #fff; border: 1px solid var(--xd-line); border-radius: 9px; padding: 8px 12px; text-align: center; }
-        .xd-pill b { display: block; font-size: 14px; }
-        .xd-pill span { font-size: 11px; color: var(--xd-muted); }
-        .xd-group-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr)); gap: 10px; margin-bottom: 10px; }
-        .xd-group { background: #fff; border: 1px solid var(--xd-line); border-radius: 11px; overflow: hidden; }
-        .xd-group-title { padding: 7px 10px; text-align: center; color: #fff; font-weight: 700; font-size: 13px; }
+        .xd-title h1 { font-size: 21px; margin: 0; color: #111827; font-weight: 800; letter-spacing: .2px; }
+        .xd-title p { margin: 5px 0 0; color: var(--xd-muted); font-size: 12.5px; }
+        .xd-filters { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; align-items: end; }
+        .xd-filter { min-width: 138px; }
+        .xd-filter label { font-size: 10.5px; font-weight: 600; color: var(--xd-muted); text-transform: uppercase; letter-spacing: .04em; display: block; margin-bottom: 4px; }
+        .xd-filter select, .xd-filter input {
+            width: 100%; padding: 7px 10px; border: 1px solid var(--xd-line); border-radius: 8px; background: #fff;
+            font-size: 13px; transition: border-color .15s, box-shadow .15s;
+        }
+        .xd-filter select:focus, .xd-filter input:focus { outline: none; border-color: var(--xd-navy-light); box-shadow: 0 0 0 3px rgba(30,66,105,.12); }
+
+        .xd-summary { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 16px; }
+        .xd-pill {
+            background: #fff; border: 1px solid var(--xd-line); border-left: 4px solid var(--xd-navy-light);
+            border-radius: 12px; padding: 11px 14px; box-shadow: var(--xd-shadow); transition: transform .15s, box-shadow .15s;
+        }
+        .xd-pill:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(18,43,73,.1); }
+        .xd-pill span { font-size: 10px; font-weight: 700; color: var(--xd-muted); text-transform: uppercase; letter-spacing: .05em; }
+        .xd-pill b { display: block; font-size: 15px; margin-top: 3px; color: #1c2733; }
+
+        .xd-group-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 14px; margin-bottom: 16px; }
+        .xd-group {
+            background: #fff; border: 1px solid var(--xd-line); border-radius: 14px; overflow: hidden;
+            box-shadow: var(--xd-shadow); transition: box-shadow .2s;
+        }
+        .xd-group:hover { box-shadow: 0 8px 22px rgba(18,43,73,.12); }
+        .xd-group-title {
+            padding: 10px 14px; text-align: center; color: #fff; font-weight: 700; font-size: 12.5px;
+            letter-spacing: .06em; text-transform: uppercase;
+        }
         .xd-cards { display: grid; grid-template-columns: repeat(3,1fr); }
-        .xd-kpi { position: relative; padding: 10px 8px; border-right: 1px solid #e5e7eb; border-top: 1px solid #e5e7eb; min-height: 126px; cursor: pointer; transition: .15s; }
-        .xd-kpi:hover { background: #f8fafc; box-shadow: inset 0 0 0 2px #93c5fd; }
+        .xd-kpi {
+            position: relative; padding: 13px 10px 11px; border-right: 1px solid #eef0f3; border-top: 1px solid #eef0f3;
+            min-height: 128px; cursor: pointer; transition: background .15s; border-top-width: 3px; border-top-style: solid;
+        }
+        .xd-kpi.green { border-top-color: var(--xd-green); }
+        .xd-kpi.amber { border-top-color: var(--xd-amber); }
+        .xd-kpi.red { border-top-color: var(--xd-red); }
+        .xd-kpi.pending, .xd-kpi.notarget { border-top-color: #c3cad3; }
+        .xd-kpi:hover { background: #f7f9fc; }
         .xd-kpi:nth-child(3n) { border-right: 0; }
-        .xd-kpi-name { font-size: 10.5px; font-weight: 700; min-height: 28px; text-align: center; }
-        .xd-value { text-align: center; font-weight: 800; font-size: 22px; margin: 3px; }
-        .xd-unit { text-align: center; font-size: 10px; color: var(--xd-muted); }
-        .xd-target { text-align: center; font-size: 10px; margin-top: 4px; }
-        .xd-dot { position: absolute; right: 8px; top: 58px; width: 11px; height: 11px; border-radius: 50%; }
+        .xd-kpi-name { font-size: 10.5px; font-weight: 700; min-height: 28px; text-align: center; color: #33404d; line-height: 1.3; }
+        .xd-value { text-align: center; font-weight: 800; font-size: 23px; margin: 4px 0 1px; color: #12202f; }
+        .xd-unit { text-align: center; font-size: 9.5px; color: var(--xd-muted); }
+        .xd-target { text-align: center; font-size: 10px; margin-top: 5px; color: var(--xd-muted); }
+        .xd-dot { position: absolute; right: 9px; top: 12px; width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 0 3px #fff; }
         .xd-dot.green, .xd-badge.green { background: var(--xd-green); }
         .xd-dot.amber, .xd-badge.amber { background: var(--xd-amber); }
         .xd-dot.red, .xd-badge.red { background: var(--xd-red); }
-        .xd-dot.pending, .xd-badge.pending, .xd-dot.notarget, .xd-badge.notarget { background: #9ca3af; }
-        .xd-mini { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; margin-top: 7px; border-top: 1px solid #eee; padding-top: 5px; }
-        .xd-mini div { text-align: center; font-size: 9px; }
-        .xd-mini b { display: block; font-size: 10px; }
-        .xd-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .xd-panel { background: #fff; border: 1px solid var(--xd-line); border-radius: 11px; padding: 11px; box-shadow: 0 2px 7px rgba(0,0,0,.03); }
-        .xd-panel h3 { font-size: 13px; color: var(--xd-red); text-align: center; margin: 0 0 7px; }
-        .xd-chartbox { height: 260px; }
-        .xd-narrative { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 10px; margin-bottom: 10px; }
-        .xd-note ul { margin: 5px 0 0; padding-left: 17px; font-size: 12px; line-height: 1.55; }
-        .xd-remark textarea { width: 100%; height: 84px; border: 1px solid var(--xd-line); border-radius: 8px; padding: 8px; resize: vertical; font-family: inherit; }
-        .xd-actions { display: flex; gap: 8px; margin-top: 7px; }
-        .xd-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        .xd-table th, .xd-table td { padding: 7px; border-bottom: 1px solid #e5e7eb; text-align: right; }
-        .xd-table th { background: #f8fafc; color: #374151; }
+        .xd-dot.pending, .xd-badge.pending, .xd-dot.notarget, .xd-badge.notarget { background: #9aa4af; }
+        .xd-mini { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; margin-top: 8px; border-top: 1px dashed #e5e9ee; padding-top: 6px; }
+        .xd-mini div { text-align: center; font-size: 9px; color: var(--xd-muted); }
+        .xd-mini b { display: block; font-size: 10.5px; color: #33404d; margin-top: 1px; }
+
+        .xd-grid { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+        .xd-panel { background: #fff; border: 1px solid var(--xd-line); border-radius: 14px; padding: 14px; box-shadow: var(--xd-shadow); }
+        .xd-panel h3 {
+            font-size: 12px; font-weight: 700; color: var(--xd-navy); text-align: center; margin: 0 0 10px;
+            text-transform: uppercase; letter-spacing: .05em; padding-bottom: 8px; border-bottom: 1px solid var(--xd-line);
+        }
+        .xd-chartbox { height: 250px; }
+
+        .xd-narrative { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 14px; margin-bottom: 16px; }
+        .xd-note ul { margin: 8px 0 0; padding-left: 18px; font-size: 12.5px; line-height: 1.7; color: #33404d; }
+        .xd-note ul li::marker { color: var(--xd-muted); }
+        .xd-remark textarea {
+            width: 100%; height: 88px; border: 1px solid var(--xd-line); border-radius: 10px; padding: 10px;
+            resize: vertical; font-family: inherit; font-size: 13px; transition: border-color .15s, box-shadow .15s;
+        }
+        .xd-remark textarea:focus { outline: none; border-color: var(--xd-navy-light); box-shadow: 0 0 0 3px rgba(30,66,105,.12); }
+        .xd-actions { display: flex; gap: 8px; margin-top: 9px; }
+
+        .xd-table-wrap { overflow: auto; border-radius: 10px; border: 1px solid var(--xd-line); }
+        .xd-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .xd-table th, .xd-table td { padding: 9px 10px; border-bottom: 1px solid #eef0f3; text-align: right; }
+        .xd-table th {
+            background: var(--xd-navy); color: #fff; font-weight: 600; font-size: 10.5px; text-transform: uppercase;
+            letter-spacing: .04em; position: sticky; top: 0;
+        }
+        .xd-table tbody tr:nth-child(even) { background: #f8fafc; }
+        .xd-table tbody tr:hover { background: #eef3f9; }
         .xd-table th:first-child, .xd-table td:first-child, .xd-table th:nth-child(2), .xd-table td:nth-child(2) { text-align: left; }
-        .xd-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; color: #fff; font-size: 10px; }
-        .xd-footer { padding: 8px 10px; font-size: 10px; color: var(--xd-muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-        .xd-legend span { margin-left: 12px; }
-        .xd-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; }
-        .xd-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); align-items: center; justify-content: center; z-index: 1050; }
+        .xd-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; color: #fff; font-size: 10px; font-weight: 700; letter-spacing: .03em; }
+
+        .xd-footer {
+            padding: 10px 16px; font-size: 11px; color: var(--xd-muted); display: flex; justify-content: space-between;
+            flex-wrap: wrap; gap: 10px; background: #fff; border: 1px solid var(--xd-line); border-radius: 12px;
+        }
+        .xd-legend span { margin-left: 14px; }
+        .xd-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; }
+
+        .xd-modal { display: none; position: fixed; inset: 0; background: rgba(15,25,40,.55); align-items: center; justify-content: center; z-index: 1050; }
         .xd-modal.open { display: flex; }
-        .xd-modal-card { width: min(640px,92vw); background: #fff; border-radius: 14px; padding: 18px; }
+        .xd-modal-card { width: min(640px,92vw); background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 24px 60px rgba(0,0,0,.3); }
         .xd-modal-head { display: flex; justify-content: space-between; align-items: start; }
-        .xd-modal-close { font-size: 24px; cursor: pointer; border: 0; background: none; line-height: 1; }
-        .xd-modal-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin: 12px 0; }
-        .xd-modal-metric { background: #f8fafc; border-radius: 8px; padding: 10px; text-align: center; }
-        .xd-modal-metric span { font-size: 10px; color: var(--xd-muted); display: block; }
-        .xd-modal-metric b { font-size: 17px; }
+        .xd-modal-head h4 { font-weight: 800; color: var(--xd-navy); }
+        .xd-modal-close { font-size: 26px; cursor: pointer; border: 0; background: none; line-height: 1; color: var(--xd-muted); }
+        .xd-modal-close:hover { color: var(--xd-red); }
+        .xd-modal-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin: 14px 0; }
+        .xd-modal-metric { background: #f7f9fc; border-radius: 10px; padding: 11px; text-align: center; }
+        .xd-modal-metric span { font-size: 10px; color: var(--xd-muted); display: block; text-transform: uppercase; letter-spacing: .04em; }
+        .xd-modal-metric b { font-size: 18px; color: #12202f; }
         .xd-modal-chart { height: 240px; }
-        @@media (max-width: 1100px) { .xd-header { grid-template-columns: 1fr; } .xd-grid, .xd-narrative, .xd-summary { grid-template-columns: 1fr 1fr; } }
+
+        .xd-empty { text-align: center; color: var(--xd-muted); font-size: 12.5px; padding: 30px 10px; }
+
+        @@media (max-width: 1300px) { .xd-grid { grid-template-columns: 1fr 1fr; } }
+        @@media (max-width: 1100px) { .xd-header { grid-template-columns: 1fr; text-align: center; } .xd-filters { justify-content: center; } .xd-grid, .xd-narrative, .xd-summary { grid-template-columns: 1fr 1fr; } }
         @@media (max-width: 720px) { .xd-grid, .xd-narrative, .xd-summary, .xd-cards { grid-template-columns: 1fr; } }
         @@media print { .xd-filters, .xd-actions, .pm-sidebar, .pm-header { display: none !important; } }
     </style>
@@ -77,9 +143,9 @@
 
 <div class="xd-app">
     <header class="xd-header">
-        <div class="xd-brand">Mahindra</div>
+        <div class="xd-brand"><i class="bi bi-building-gear"></i> Mahindra</div>
         <div class="xd-title">
-            <h1>PLANT HEAD PRODUCTION MEETING - @plantName.ToUpper() @lineName.ToUpper()</h1>
+            <h1>PLANT HEAD PRODUCTION MEETING &mdash; @plantName.ToUpper() @lineName.ToUpper()</h1>
             <p>Weekly executive review dashboard</p>
         </div>
         <form method="get" class="xd-filters">
@@ -105,8 +171,8 @@
                 <label>Week</label>
                 <input type="week" name="week" value="@Model.Week" onchange="this.form.submit()" />
             </div>
-            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">Print / PDF</button>
-            <a asp-action="Index" asp-route-plantId="@Model.PlantId" asp-route-lineId="@Model.LineId" class="btn btn-primary btn-sm">Switch to Classic View</a>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>
+            <a asp-action="Index" asp-route-plantId="@Model.PlantId" asp-route-lineId="@Model.LineId" class="btn btn-primary btn-sm"><i class="bi bi-arrow-left-right"></i> Classic View</a>
         </form>
     </header>
 
@@ -117,11 +183,11 @@
     else
     {
         <section class="xd-summary">
-            <div class="xd-pill"><span>FINANCIAL YEAR</span><b>FY@(fyLabel)</b></div>
-            <div class="xd-pill"><span>SELECTED WEEK</span><b>Week @(System.Globalization.ISOWeek.GetWeekOfYear(Model.WeekStart))</b></div>
-            <div class="xd-pill"><span>WEEK DATES</span><b>@Model.WeekStart.ToString("dd MMM") - @Model.WeekStart.AddDays(6).ToString("dd MMM yyyy")</b></div>
+            <div class="xd-pill"><span>Financial Year</span><b>FY@(fyLabel)</b></div>
+            <div class="xd-pill"><span>Selected Week</span><b>Week @(System.Globalization.ISOWeek.GetWeekOfYear(Model.WeekStart))</b></div>
+            <div class="xd-pill"><span>Week Dates</span><b>@Model.WeekStart.ToString("dd MMM") - @Model.WeekStart.AddDays(6).ToString("dd MMM yyyy")</b></div>
             <div class="xd-pill">
-                <span>DATA STATUS</span>
+                <span>Data Status</span>
                 @if (Model.TotalCount > 0 && Model.EnteredCount == Model.TotalCount)
                 {
                     <b style="color:var(--xd-green)">&#9679; Data Complete</b>
@@ -131,7 +197,7 @@
                     <b style="color:var(--xd-amber)">&#9679; @Model.EnteredCount / @Model.TotalCount Entered</b>
                 }
             </div>
-            <div class="xd-pill"><span>LAST REFRESHED</span><b>@(Model.LastRefreshed.HasValue ? Model.LastRefreshed.Value.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt") : "Not started")</b></div>
+            <div class="xd-pill"><span>Last Refreshed</span><b>@(Model.LastRefreshed.HasValue ? Model.LastRefreshed.Value.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt") : "Not started")</b></div>
         </section>
 
         <div class="xd-group-row">
@@ -139,27 +205,27 @@
             {
                 var barColor = group.IndicatorCode switch
                 {
-                    "S" => "#d71920",
-                    "Q" => "#122b49",
-                    "C" => "#167044",
-                    "D" => "#18527a",
-                    "P" => "#5c8a3a",
-                    "SUST" => "#0f7d8c",
-                    "M" => "#b66900",
-                    _ => "#4b5563"
+                    "S" => "linear-gradient(135deg,#d71920,#a71219)",
+                    "Q" => "linear-gradient(135deg,#1e4269,#122b49)",
+                    "C" => "linear-gradient(135deg,#1e8e5a,#146840)",
+                    "D" => "linear-gradient(135deg,#2b6ca3,#18527a)",
+                    "P" => "linear-gradient(135deg,#71a34a,#5c8a3a)",
+                    "SUST" => "linear-gradient(135deg,#14939f,#0f7d8c)",
+                    "M" => "linear-gradient(135deg,#d9a02a,#b66900)",
+                    _ => "linear-gradient(135deg,#5b6b7c,#4b5563)"
                 };
                 <section class="xd-group">
-                    <div class="xd-group-title" style="background:@barColor">@group.IndicatorName.ToUpper()</div>
+                    <div class="xd-group-title" style="background:@barColor">@group.IndicatorName</div>
                     <div class="xd-cards">
                         @foreach (var k in group.Kpis)
                         {
                             var dotClass = k.Status.ToLower();
-                            <div class="xd-kpi" data-kpi-id="@k.KpiId" data-kpi-name="@k.Description">
+                            <div class="xd-kpi @dotClass" data-kpi-id="@k.KpiId" data-kpi-name="@k.Description">
+                                <i class="xd-dot @dotClass"></i>
                                 <div class="xd-kpi-name">@k.Description</div>
                                 <div class="xd-unit">@k.UnitName</div>
                                 <div class="xd-value">@(k.Value?.ToString("0.##") ?? "-")</div>
                                 <div class="xd-target">Target: @(k.Target?.ToString("0.##") ?? "-")</div>
-                                <i class="xd-dot @dotClass"></i>
                                 <div class="xd-mini">
                                     <div>WoW<b>@(k.WeekOverWeek?.ToString("0.##") ?? "-")</b></div>
                                     <div>MTD<b>@(k.MonthCumValue?.ToString("0.##") ?? "-")</b></div>
@@ -173,13 +239,27 @@
         </div>
 
         <section class="xd-grid">
-            <div class="xd-panel"><h3>WEEKLY TREND - QUALITY &amp; DELIVERY KPIs</h3><div class="xd-chartbox"><canvas id="trendChart"></canvas></div></div>
-            <div class="xd-panel"><h3>MANPOWER DEPLOYED</h3><div class="xd-chartbox"><canvas id="manpowerChart"></canvas></div></div>
+            <div class="xd-panel"><h3><i class="bi bi-graph-up"></i> Weekly Trend &mdash; Quality &amp; Delivery</h3><div class="xd-chartbox"><canvas id="trendChart"></canvas></div></div>
+            <div class="xd-panel">
+                <h3><i class="bi bi-bar-chart-steps"></i> Top 5 Rework Defects &mdash; This Week</h3>
+                @if (Model.TopDefects.Count == 0)
+                {
+                    <div class="xd-empty">
+                        No defect breakdown recorded yet.<br />
+                        Add entries like <code>DDS 150 RPT; Bolt torque 63 RPT</code> in a Rework KPI's Remarks to see this chart.
+                    </div>
+                }
+                else
+                {
+                    <div class="xd-chartbox"><canvas id="defectChart"></canvas></div>
+                }
+            </div>
+            <div class="xd-panel"><h3><i class="bi bi-people"></i> Manpower Deployed</h3><div class="xd-chartbox"><canvas id="manpowerChart"></canvas></div></div>
         </section>
 
         <section class="xd-panel mb-3">
-            <h3>WEEKLY KPI SUMMARY</h3>
-            <div style="overflow:auto">
+            <h3><i class="bi bi-table"></i> Weekly KPI Summary</h3>
+            <div class="xd-table-wrap">
                 <table class="xd-table">
                     <thead>
                         <tr><th>Category</th><th>KPI</th><th>Unit</th><th>Target</th><th>Week</th><th>Status</th><th>Prev.</th><th>&Delta;</th><th>MTD</th><th>YTD</th></tr>
@@ -210,7 +290,7 @@
 
         <section class="xd-narrative">
             <div class="xd-panel xd-note">
-                <h3 style="color:var(--xd-green);text-align:left">HIGHLIGHTS</h3>
+                <h3 style="color:var(--xd-green);text-align:left;border-bottom-color:transparent"><i class="bi bi-check-circle"></i> Highlights</h3>
                 @if (Model.Highlights.Count == 0)
                 {
                     <p class="text-muted small mb-0">No KPIs on target yet this week.</p>
@@ -226,7 +306,7 @@
                 }
             </div>
             <div class="xd-panel xd-note">
-                <h3 style="text-align:left">LOWLIGHTS</h3>
+                <h3 style="color:var(--xd-red);text-align:left;border-bottom-color:transparent"><i class="bi bi-exclamation-triangle"></i> Lowlights</h3>
                 @if (Model.Lowlights.Count == 0)
                 {
                     <p class="text-muted small mb-0">No red-status KPIs this week.</p>
@@ -242,12 +322,12 @@
                 }
             </div>
             <div class="xd-panel xd-remark">
-                <h3 style="color:var(--xd-navy);text-align:left">REMARKS - THIS WEEK</h3>
+                <h3 style="color:var(--xd-navy);text-align:left;border-bottom-color:transparent"><i class="bi bi-pencil-square"></i> Remarks &mdash; This Week</h3>
                 <textarea id="remarksText" @(Model.CanEditRemarks && Model.SessionId.HasValue ? "" : "readonly")>@Model.SessionRemarks</textarea>
                 @if (Model.CanEditRemarks && Model.SessionId.HasValue)
                 {
                     <div class="xd-actions">
-                        <button class="btn btn-primary btn-sm" onclick="saveRemarks()">Save Remarks</button>
+                        <button class="btn btn-primary btn-sm" onclick="saveRemarks()"><i class="bi bi-save"></i> Save Remarks</button>
                     </div>
                 }
                 else if (!Model.SessionId.HasValue)
@@ -285,7 +365,9 @@
         var trendLabels = @Html.Raw(Json.Serialize(Model.TrendWeekLabels));
         var trendSeries = @Html.Raw(Json.Serialize(Model.TrendSeries));
         var manpowerSeries = @Html.Raw(Json.Serialize(Model.ManpowerSeries));
-        var palette = ['#d71920', '#122b49', '#2e7d32', '#8e44ad', '#f5a623', '#0f7d8c'];
+        var defectLabels = @Html.Raw(Json.Serialize(Model.TopDefects.Select(d => d.Name)));
+        var defectValues = @Html.Raw(Json.Serialize(Model.TopDefects.Select(d => d.Count)));
+        var palette = ['#d71920', '#122b49', '#1e8e5a', '#8e44ad', '#c98a1f', '#0f7d8c'];
 
         function makeChart(id, labels, series, type) {
             var el = document.getElementById(id);
@@ -310,6 +392,21 @@
 
         makeChart('trendChart', trendLabels, trendSeries, 'line');
         makeChart('manpowerChart', trendLabels, manpowerSeries, 'bar');
+
+        if (defectLabels.length) {
+            new Chart(document.getElementById('defectChart'), {
+                type: 'bar',
+                data: {
+                    labels: defectLabels,
+                    datasets: [{ data: defectValues, backgroundColor: '#d71920', borderRadius: 4 }]
+                },
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { ticks: { font: { size: 10 } } }, y: { ticks: { font: { size: 10 } } } }
+                }
+            });
+        }
 
         $('.xd-kpi').on('click', function () {
             openKpiModal($(this).data('kpi-id'), $(this).data('kpi-name'));
@@ -341,7 +438,7 @@
                             labels: data.points.map(function (p) { return p.weekLabel; }),
                             datasets: [
                                 { label: name, data: data.points.map(function (p) { return p.value; }), borderColor: '#d71920', backgroundColor: '#d71920', tension: .3 },
-                                { label: 'Target', data: data.points.map(function () { return data.target; }), borderColor: '#2e7d32', borderDash: [6, 5], pointRadius: 0 }
+                                { label: 'Target', data: data.points.map(function () { return data.target; }), borderColor: '#1e8e5a', borderDash: [6, 5], pointRadius: 0 }
                             ]
                         },
                         options: { responsive: true, maintainAspectRatio: false }
