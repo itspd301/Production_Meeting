@@ -136,6 +136,28 @@
             border-radius: 10px; font-size: 12.5px; text-align: center; margin-bottom: 14px;
         }
 
+        .collapse-cards .xd-kpi:nth-child(n+4) {
+            display: none;
+        }
+
+        .collapse-cards.expanded .xd-kpi {
+            display: block;
+        }
+
+        .show-all-btn {
+            border: 1px solid #d9dee7;
+            background: #f8fafc;
+            color: #1e4269;
+            font-size: 11px;
+            padding: 2px 10px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+            .show-all-btn:hover {
+                background: #eef3f9;
+            }
+
         @@media (max-width: 1300px) { .xd-grid { grid-template-columns: 1fr 1fr; } }
         @@media (max-width: 1100px) { .xd-header { grid-template-columns: 1fr; text-align: center; } .xd-filters { justify-content: center; } .xd-grid, .xd-narrative, .xd-summary { grid-template-columns: 1fr 1fr; } }
         @@media (max-width: 720px) { .xd-grid, .xd-narrative, .xd-summary, .xd-cards { grid-template-columns: 1fr; } }
@@ -184,7 +206,7 @@
     }
     else
     {
-        <div class="xd-sample-banner"><i class="bi bi-info-circle"></i> All figures on this dashboard are sample data - hook up your stored procedures in <code>ExecutiveDashboardService.ApplyStaticPlaceholders</code> to replace them.</div>
+        @* <div class="xd-sample-banner"><i class="bi bi-info-circle"></i> All figures on this dashboard are sample data - hook up your stored procedures in <code>ExecutiveDashboardService.ApplyStaticPlaceholders</code> to replace them.</div> *@
         <section class="xd-summary">
             <div class="xd-pill"><span>Financial Year</span><b>@Model.SummaryFyLabel</b></div>
             <div class="xd-pill"><span>Selected Week</span><b>@Model.SummaryWeekLabel</b></div>
@@ -209,7 +231,7 @@
                 };
                 <section class="xd-group">
                     <div class="xd-group-title" style="background:@barColor">@group.IndicatorName</div>
-                    <div class="xd-cards">
+                    <div class="xd-cards collapse-cards">
                         @foreach (var k in group.Kpis)
                         {
                             var dotClass = k.Status.ToLower();
@@ -227,6 +249,14 @@
                             </div>
                         }
                     </div>
+                    @if (group.Kpis.Count > 3)
+                    {
+                        <div class="text-center p-2">
+                            <button type="button" class="show-all-btn">
+                                Show All
+                            </button>
+                        </div>
+                    }
                 </section>
             }
         </div>
@@ -403,6 +433,23 @@
 
         $('.xd-kpi').on('click', function () {
             openKpiModal($(this).data('kpi-id'), $(this).data('kpi-name'));
+        });
+
+
+                $(document).on('click', '.show-all-btn', function () {
+
+            var cards = $(this)
+                .closest('.xd-group')
+                .find('.collapse-cards');
+
+            cards.toggleClass('expanded');
+
+            if (cards.hasClass('expanded')) {
+                $(this).text('Show Less');
+            }
+            else {
+                $(this).text('Show All');
+            }
         });
 
         var xdModalChart;

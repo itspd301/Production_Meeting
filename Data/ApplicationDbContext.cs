@@ -91,6 +91,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<UserPlantLineAccess>()
             .HasIndex(a => new { a.UserId, a.PlantId, a.LineId }).IsUnique();
 
-        SeedData.Seed(builder);
+        //SeedData.Seed(builder);
     }
 }
