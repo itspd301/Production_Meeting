@@ -54,4 +54,17 @@ public static class PmDates
         var sunday = monday.AddDays(6);
         return $"Week {ISOWeek.GetWeekOfYear(monday)}, {ISOWeek.GetYear(monday)} ({monday:dd-MMM} - {sunday:dd-MMM})";
     }
+
+    // The fiscal year runs April to March (e.g. 1-Apr-2025 to 31-Mar-2026 is "FY26"),
+    // identified by the calendar year it ends in.
+    public static int FiscalYearEndYear(DateTime date) => date.Month >= 4 ? date.Year + 1 : date.Year;
+
+    // Two-digit fiscal year labels for the "F<n> / F<n+1>" KPI target columns. These shift
+    // forward by one every April: a week in FY26 shows "F26" / "F27 / L4 Target", and the
+    // same week a year later (FY27) shows "F27" / "F28 / L4 Target".
+    public static (string CurrentLabel, string TargetLabel) FiscalTargetLabels(DateTime date)
+    {
+        var fyEnd = FiscalYearEndYear(date) % 100;
+        return ($"F{fyEnd:D2}", $"F{(fyEnd + 1) % 100:D2} / L4 Target");
+    }
 }

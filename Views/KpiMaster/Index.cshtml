@@ -53,6 +53,8 @@
                     <th>Unit</th>
                     <th>Description</th>
                     <th>Order</th>
+                    <th>F26 / F27 Target</th>
+                    <th>Source</th>
                     <th>Status</th>
                     <th></th>
                 </tr>
@@ -60,7 +62,7 @@
             <tbody>
                 @if (Model.Items.Count == 0)
                 {
-                    <tr><td colspan="8" class="text-center text-muted">No KPIs found.</td></tr>
+                    <tr><td colspan="10" class="text-center text-muted">No KPIs found.</td></tr>
                 }
                 @foreach (var k in Model.Items)
                 {
@@ -71,6 +73,17 @@
                         <td>@k.UnitName</td>
                         <td>@k.Description</td>
                         <td>@k.DisplayOrder</td>
+                        <td>@(k.F26Value?.ToString("0.##") ?? "-") / @(k.F27Value?.ToString("0.##") ?? "-")</td>
+                        <td>
+                            @if (k.IsSourcedFromStoredProcedure)
+                            {
+                                <span class="pm-badge-status status-amber" title="@k.StoredProcedureName"><i class="bi bi-database-gear"></i> SP</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">Manual</span>
+                            }
+                        </td>
                         <td><span class="pm-badge-status @(k.IsActive ? "status-green" : "status-red")">@(k.IsActive ? "Active" : "Inactive")</span></td>
                         <td class="text-end">
                             <a asp-action="Edit" asp-route-id="@k.KpiId" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil-square"></i></a>

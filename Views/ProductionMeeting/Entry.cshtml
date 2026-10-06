@@ -29,9 +29,8 @@
                     <th style="width:70px;">Ind.</th>
                     <th style="min-width:220px;">Description</th>
                     <th>Unit</th>
-                    <th>Model</th>
-                    <th style="width:110px;">F26</th>
-                    <th style="width:110px;">F27 / L4 Target</th>
+                    <th style="width:110px;">@Model.F26Label</th>
+                    <th style="width:110px;">@Model.F27Label</th>
                     <th style="width:100px;">Week</th>
                     <th style="width:110px;">Month Cum.</th>
                     <th style="width:100px;">YTD</th>
@@ -54,20 +53,17 @@
                             }
                             <td>@row.Description</td>
                             <td>@row.UnitName</td>
+                            <td><input type="number" step="0.01" class="form-control form-control-sm pm-f-f26" value="@row.F26Value" data-master-value="@row.MasterF26Value" @(isReadOnly ? "readonly" : "") /></td>
+                            <td><input type="number" step="0.01" class="form-control form-control-sm pm-f-f27" value="@row.F27Value" data-master-value="@row.MasterF27Value" @(isReadOnly ? "readonly" : "") /></td>
                             <td>
-                                <select class="form-select form-select-sm pm-f-model" @(isReadOnly ? "disabled" : "")>
-                                    <option value="">-</option>
-                                    @foreach (var m in Model.Models)
-                                    {
-                                        <option value="@m.Id" selected="@(row.ModelId == m.Id)">@m.Name</option>
-                                    }
-                                </select>
+                                <input type="number" step="1" class="form-control form-control-sm pm-f-week" value="@row.WeekValue" @(isReadOnly ? "readonly" : "") />
+                                @if (row.IsSpSourced)
+                                {
+                                    <i class="bi bi-database-gear text-muted" title="Auto-filled from stored procedure - you can still edit it"></i>
+                                }
                             </td>
-                            <td><input type="number" step="1" class="form-control form-control-sm pm-f-f26" value="@row.F26Value" @(isReadOnly ? "readonly" : "") /></td>
-                            <td><input type="number" step="1" class="form-control form-control-sm pm-f-f27" value="@row.F27Value" @(isReadOnly ? "readonly" : "") /></td>
-                            <td><input type="number" step="1" class="form-control form-control-sm pm-f-week" value="@row.WeekValue" @(isReadOnly ? "readonly" : "") /></td>
-                            <td><input type="number" step="1" class="form-control form-control-sm pm-f-month" value="@row.MonthCumValue" @(isReadOnly ? "readonly" : "") /></td>
-                            <td><input type="number" step="1" class="form-control form-control-sm pm-f-ytd" value="@row.YtdValue" @(isReadOnly ? "readonly" : "") /></td>
+                            <td class="pm-f-month text-end">@row.MonthCumValue</td>
+                            <td class="pm-f-ytd text-end">@row.YtdValue</td>
                             <td><input type="text" class="form-control form-control-sm pm-f-remarks" value="@row.Remarks" @(isReadOnly ? "readonly" : "") /></td>
                         </tr>
                     }
@@ -76,7 +72,7 @@
         </table>
     </div>
     <p class="text-muted small mb-0">
-        Use the <kbd>&uarr;</kbd> <kbd>&darr;</kbd> arrow keys to move between cells in the same column.
+        Use the <kbd>&uarr;</kbd> <kbd>&darr;</kbd> arrow keys to move between cells in the same column. Month Cum. and YTD are calculated automatically from Week values.
     </p>
 </div>
 
@@ -100,12 +96,9 @@
                 var $row = $(this);
                 rows.push({
                     kpiId: parseInt($row.data('kpi-id'), 10),
-                    modelId: $row.find('.pm-f-model').val() ? parseInt($row.find('.pm-f-model').val(), 10) : null,
                     f26Value: $row.find('.pm-f-f26').val() || null,
                     f27Value: $row.find('.pm-f-f27').val() || null,
                     weekValue: $row.find('.pm-f-week').val() || null,
-                    monthCumValue: $row.find('.pm-f-month').val() || null,
-                    ytdValue: $row.find('.pm-f-ytd').val() || null,
                     remarks: $row.find('.pm-f-remarks').val() || null
                 });
             });
@@ -131,6 +124,11 @@
                     pmHideLoader();
                     if (res.success) {
                         toastr.success(res.message || 'Saved successfully');
+                        (res.rows || []).forEach(function (r) {
+                            var $row = $('.pm-kpi-row[data-kpi-id="' + r.kpiId + '"]');
+                            $row.find('.pm-f-month').text(r.monthCumValue != null ? r.monthCumValue : '');
+                            $row.find('.pm-f-ytd').text(r.ytdValue != null ? r.ytdValue : '');
+                        });
                         if (markCompleted) {
                             setTimeout(function () { window.location.href = '@Url.Action("Index")'; }, 900);
                         }
@@ -151,10 +149,38 @@
             });
         });
 
+        // F26/F27 are normally fixed for the whole year (set in KPI Master). Editing one
+        // here only overrides this single week, so confirm before letting it stick - and
+        // revert back to the yearly value if the popup gets dismissed instead of confirmed.
+        $('.pm-entry-table').on('change', '.pm-f-f26, .pm-f-f27', function () {
+            var $input = $(this);
+            var masterValue = $input.data('master-value');
+            var masterStr = (masterValue === undefined || masterValue === null || masterValue === '') ? '' : String(masterValue);
+            var previousValue = $input.data('prev-value') !== undefined ? $input.data('prev-value') : masterStr;
+
+            if ($input.val() === masterStr) {
+                $input.data('prev-value', $input.val());
+                return;
+            }
+
+            var newValue = $input.val();
+            var confirmed = false;
+            pmConfirm('This value is normally fixed for the year (set in KPI Master). Override it for this week only?', function () {
+                confirmed = true;
+                $input.data('prev-value', newValue);
+            });
+            $('#pmConfirmModal').one('hidden.bs.modal', function () {
+                if (!confirmed) {
+                    $input.val(previousValue);
+                }
+            });
+        });
+        $('.pm-f-f26, .pm-f-f27').each(function () { $(this).data('prev-value', $(this).val()); });
+
         // Excel-style Up/Down cell navigation: move focus to the same column in the row
         // above/below instead of the browser's native number-input spinner behavior.
-            $('.pm-entry-table').on('keydown',
-        '.pm-f-model, .pm-f-f26, .pm-f-f27, .pm-f-week, .pm-f-month, .pm-f-ytd, .pm-f-remarks',
+        $('.pm-entry-table').on('keydown',
+        '.pm-f-f26, .pm-f-f27, .pm-f-week, .pm-f-remarks',
         function (e) {
 
             if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key))
@@ -163,12 +189,9 @@
             e.preventDefault();
 
             var columns = [
-                'pm-f-model',
                 'pm-f-f26',
                 'pm-f-f27',
                 'pm-f-week',
-                'pm-f-month',
-                'pm-f-ytd',
                 'pm-f-remarks'
             ];
 

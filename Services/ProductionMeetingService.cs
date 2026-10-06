@@ -11,11 +11,13 @@ public class ProductionMeetingService : IProductionMeetingService
 {
     private readonly ApplicationDbContext _db;
     private readonly IUserAccessService _accessService;
+    private readonly ILogger<ProductionMeetingService> _logger;
 
-    public ProductionMeetingService(ApplicationDbContext db, IUserAccessService accessService)
+    public ProductionMeetingService(ApplicationDbContext db, IUserAccessService accessService, ILogger<ProductionMeetingService> logger)
     {
         _db = db;
         _accessService = accessService;
+        _logger = logger;
     }
 
     public async Task<MeetingIndexViewModel> GetIndexAsync(MeetingIndexViewModel filters, string userId, bool isAdmin, CancellationToken cancellationToken = default)
@@ -160,9 +162,7 @@ public class ProductionMeetingService : IProductionMeetingService
             .Where(t => t.SessionId == session.SessionId)
             .ToListAsync(cancellationToken);
 
-        var models = await _db.ProductModels.Where(m => m.IsActive).OrderBy(m => m.Name)
-            .Select(m => new ValueTuple<int, string>(m.ModelId, m.Name)).ToListAsync(cancellationToken);
-
+        var rows = new List<(IndicatorGroupViewModel Group, KpiEntryRowViewModel Row)>();
         var groups = kpis
             .GroupBy(k => k.Indicator)
             .Select(g => new IndicatorGroupViewModel
@@ -180,16 +180,33 @@ public class ProductionMeetingService : IProductionMeetingService
                         UnitName = k.Unit.Name,
                         DisplayOrder = k.DisplayOrder,
                         TransactionId = tx?.TransactionId,
-                        ModelId = tx?.ModelId,
-                        F26Value = tx?.F26Value,
-                        F27Value = tx?.F27Value,
+                        // No week-specific override saved yet -> show the fixed yearly value.
+                        F26Value = tx?.F26Value ?? k.F26Value,
+                        F27Value = tx?.F27Value ?? k.F27Value,
+                        MasterF26Value = k.F26Value,
+                        MasterF27Value = k.F27Value,
                         WeekValue = tx?.WeekValue,
                         MonthCumValue = tx?.MonthCumValue,
                         YtdValue = tx?.YtdValue,
-                        Remarks = tx?.Remarks
+                        Remarks = tx?.Remarks,
+                        IsSpSourced = k.IsSourcedFromStoredProcedure && !string.IsNullOrWhiteSpace(k.StoredProcedureName)
                     };
                 }).ToList()
             }).ToList();
+
+        // Only reach out to a stored procedure for a row that hasn't been manually saved
+        // yet - once someone has entered/saved a value, that's authoritative and we don't
+        // keep overwriting it on every page load.
+        foreach (var group in groups)
+        {
+            foreach (var row in group.Rows.Where(r => r.IsSpSourced && !r.WeekValue.HasValue))
+            {
+                var kpi = kpis.First(k => k.KpiId == row.KpiId);
+                row.WeekValue = await TryGetScalarFromProcedureAsync(kpi.StoredProcedureName!, session.PlantId, session.LineId, session.MeetingDate, cancellationToken);
+            }
+        }
+
+        var (f26Label, f27Label) = PmDates.FiscalTargetLabels(session.MeetingDate);
 
         return new MeetingEntryViewModel
         {
@@ -203,9 +220,51 @@ public class ProductionMeetingService : IProductionMeetingService
             Status = session.Status == MeetingSessionStatus.Completed ? "Completed" : "Draft",
             Remarks = session.Remarks,
             ReadOnly = readOnly,
-            Models = models,
+            F26Label = f26Label,
+            F27Label = f27Label,
             IndicatorGroups = groups
         };
+    }
+
+    // Calling convention guess, matching DashboardService's existing SP calls
+    // (usp_GetStraightPassRatio / usp_GetTraceability): EXEC <proc> @PlantId, @LineId,
+    // @WeekStart returning a single scalar. Adjust the parameter list here if the real
+    // procedures end up expecting something different.
+    private async Task<decimal?> TryGetScalarFromProcedureAsync(string procName, int plantId, int lineId, DateTime weekStart, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var results = await _db.Database
+                .SqlQuery<decimal>($"EXEC {procName} @PlantId = {plantId}, @LineId = {lineId}, @WeekStart = {weekStart}")
+                .ToListAsync(cancellationToken);
+            return results.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Stored procedure {Proc} failed for KPI auto-fill (plant {PlantId}, line {LineId}, week {Week}).", procName, plantId, lineId, weekStart);
+            return null;
+        }
+    }
+
+    // Month Cum. resets to this week's value whenever the calendar month changes since the
+    // last entered week; YTD resets whenever the April-March fiscal year changes. Otherwise
+    // each keeps accumulating on top of the previous week's figure.
+    private async Task<(decimal? MonthCumValue, decimal? YtdValue)> ComputeCumulativeValuesAsync(int plantId, int lineId, int kpiId, DateTime meetingDate, decimal weekValue, CancellationToken cancellationToken)
+    {
+        var previous = await _db.KpiTransactions
+            .Include(t => t.Session)
+            .Where(t => t.KpiId == kpiId && t.Session.PlantId == plantId && t.Session.LineId == lineId
+                     && t.Session.MeetingDate < meetingDate && t.WeekValue.HasValue)
+            .OrderByDescending(t => t.Session.MeetingDate)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var isNewMonth = previous == null || previous.Session.MeetingDate.Month != meetingDate.Month || previous.Session.MeetingDate.Year != meetingDate.Year;
+        var isNewFiscalYear = previous == null || PmDates.FiscalYearEndYear(previous.Session.MeetingDate) != PmDates.FiscalYearEndYear(meetingDate);
+
+        var monthCum = isNewMonth ? weekValue : (previous!.MonthCumValue ?? 0) + weekValue;
+        var ytd = isNewFiscalYear ? weekValue : (previous!.YtdValue ?? 0) + weekValue;
+
+        return (monthCum, ytd);
     }
 
     public async Task<SaveEntryResult> SaveEntryAsync(SaveEntryRequest request, string userId, string userFullName, CancellationToken cancellationToken = default)
@@ -226,11 +285,18 @@ public class ProductionMeetingService : IProductionMeetingService
             .ToListAsync(cancellationToken);
 
         var auditsToAdd = new List<KpiTransactionAudit>();
+        var rowTotals = new List<SavedRowTotals>();
         var now = DateTime.UtcNow;
 
         foreach (var row in request.Rows)
         {
-            var existing = existingTransactions.FirstOrDefault(t => t.KpiId == row.KpiId && t.ModelId == row.ModelId);
+            var existing = existingTransactions.FirstOrDefault(t => t.KpiId == row.KpiId);
+
+            decimal? monthCum = null, ytd = null;
+            if (row.WeekValue.HasValue)
+            {
+                (monthCum, ytd) = await ComputeCumulativeValuesAsync(session.PlantId, session.LineId, row.KpiId, session.MeetingDate, row.WeekValue.Value, cancellationToken);
+            }
 
             if (existing == null)
             {
@@ -238,12 +304,11 @@ public class ProductionMeetingService : IProductionMeetingService
                 {
                     SessionId = request.SessionId,
                     KpiId = row.KpiId,
-                    ModelId = row.ModelId,
                     F26Value = row.F26Value,
                     F27Value = row.F27Value,
                     WeekValue = row.WeekValue,
-                    MonthCumValue = row.MonthCumValue,
-                    YtdValue = row.YtdValue,
+                    MonthCumValue = monthCum,
+                    YtdValue = ytd,
                     Remarks = row.Remarks,
                     CreatedBy = userId,
                     CreatedDate = now
@@ -254,8 +319,8 @@ public class ProductionMeetingService : IProductionMeetingService
                 LogIfPresent(auditsToAdd, transaction.TransactionId, row.KpiId, "F26_Value", row.F26Value, userId, now);
                 LogIfPresent(auditsToAdd, transaction.TransactionId, row.KpiId, "F27_Value", row.F27Value, userId, now);
                 LogIfPresent(auditsToAdd, transaction.TransactionId, row.KpiId, "WeekValue", row.WeekValue, userId, now);
-                LogIfPresent(auditsToAdd, transaction.TransactionId, row.KpiId, "MonthCumValue", row.MonthCumValue, userId, now);
-                LogIfPresent(auditsToAdd, transaction.TransactionId, row.KpiId, "YtdValue", row.YtdValue, userId, now);
+                LogIfPresent(auditsToAdd, transaction.TransactionId, row.KpiId, "MonthCumValue", monthCum, userId, now);
+                LogIfPresent(auditsToAdd, transaction.TransactionId, row.KpiId, "YtdValue", ytd, userId, now);
                 LogIfPresent(auditsToAdd, transaction.TransactionId, row.KpiId, "Remarks", row.Remarks, userId, now);
             }
             else
@@ -263,19 +328,21 @@ public class ProductionMeetingService : IProductionMeetingService
                 LogIfChanged(auditsToAdd, existing.TransactionId, row.KpiId, "F26_Value", existing.F26Value, row.F26Value, userId, now);
                 LogIfChanged(auditsToAdd, existing.TransactionId, row.KpiId, "F27_Value", existing.F27Value, row.F27Value, userId, now);
                 LogIfChanged(auditsToAdd, existing.TransactionId, row.KpiId, "WeekValue", existing.WeekValue, row.WeekValue, userId, now);
-                LogIfChanged(auditsToAdd, existing.TransactionId, row.KpiId, "MonthCumValue", existing.MonthCumValue, row.MonthCumValue, userId, now);
-                LogIfChanged(auditsToAdd, existing.TransactionId, row.KpiId, "YtdValue", existing.YtdValue, row.YtdValue, userId, now);
+                LogIfChanged(auditsToAdd, existing.TransactionId, row.KpiId, "MonthCumValue", existing.MonthCumValue, monthCum, userId, now);
+                LogIfChanged(auditsToAdd, existing.TransactionId, row.KpiId, "YtdValue", existing.YtdValue, ytd, userId, now);
                 LogIfChanged(auditsToAdd, existing.TransactionId, row.KpiId, "Remarks", existing.Remarks, row.Remarks, userId, now);
 
                 existing.F26Value = row.F26Value;
                 existing.F27Value = row.F27Value;
                 existing.WeekValue = row.WeekValue;
-                existing.MonthCumValue = row.MonthCumValue;
-                existing.YtdValue = row.YtdValue;
+                existing.MonthCumValue = monthCum;
+                existing.YtdValue = ytd;
                 existing.Remarks = row.Remarks;
                 existing.ModifiedBy = userId;
                 existing.ModifiedDate = now;
             }
+
+            rowTotals.Add(new SavedRowTotals { KpiId = row.KpiId, MonthCumValue = monthCum, YtdValue = ytd });
         }
 
         if (request.MarkCompleted)
@@ -292,7 +359,7 @@ public class ProductionMeetingService : IProductionMeetingService
 
         await _db.SaveChangesAsync(cancellationToken);
 
-        return new SaveEntryResult { Success = true, Message = "Saved successfully." };
+        return new SaveEntryResult { Success = true, Message = "Saved successfully.", Rows = rowTotals };
     }
 
     public async Task<List<KpiTransactionAudit>> GetSessionAuditHistoryAsync(int sessionId, CancellationToken cancellationToken = default)

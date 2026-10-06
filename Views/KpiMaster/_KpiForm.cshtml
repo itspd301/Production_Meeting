@@ -76,6 +76,32 @@
             <label asp-for="LowerIsBetter" class="form-check-label"></label>
         </div>
     </div>
+
+    <div class="col-md-3">
+        <label asp-for="F26Value" class="form-label"></label>
+        <input asp-for="F26Value" type="number" step="0.01" class="form-control" />
+        <span asp-validation-for="F26Value" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-3">
+        <label asp-for="F27Value" class="form-label"></label>
+        <input asp-for="F27Value" type="number" step="0.01" class="form-control" />
+        <span asp-validation-for="F27Value" class="text-danger small"></span>
+        <div class="form-text">Fixed for the year; the weekly Entry grid pre-fills from these but can override a single week.</div>
+    </div>
+
+    <div class="col-md-3 d-flex align-items-end">
+        <div class="form-check">
+            <input asp-for="IsSourcedFromStoredProcedure" class="form-check-input" id="formIsSpSourced" />
+            <label asp-for="IsSourcedFromStoredProcedure" class="form-check-label"></label>
+        </div>
+    </div>
+
+    <div class="col-md-3" id="formSpNameGroup">
+        <label asp-for="StoredProcedureName" class="form-label"></label>
+        <input asp-for="StoredProcedureName" class="form-control" placeholder="e.g. dbo.usp_GetQualityWeekValue" />
+        <span asp-validation-for="StoredProcedureName" class="text-danger small"></span>
+    </div>
 </div>
 
 <div class="d-flex justify-content-end gap-2 mt-4">

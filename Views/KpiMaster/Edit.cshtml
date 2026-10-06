@@ -31,5 +31,11 @@
                 });
             });
         });
+
+        function toggleSpNameGroup() {
+            $('#formSpNameGroup').toggle($('#formIsSpSourced').is(':checked'));
+        }
+        $('#formIsSpSourced').on('change', toggleSpNameGroup);
+        toggleSpNameGroup();
     </script>
 }

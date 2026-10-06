@@ -36,6 +36,19 @@ public class KpiMasterFormViewModel
     [Display(Name = "Lower value is better")]
     public bool LowerIsBetter { get; set; }
 
+    [Display(Name = "F26")]
+    public decimal? F26Value { get; set; }
+
+    [Display(Name = "F27 / L4 Target")]
+    public decimal? F27Value { get; set; }
+
+    [Display(Name = "Fetch value via stored procedure")]
+    public bool IsSourcedFromStoredProcedure { get; set; }
+
+    [Display(Name = "Stored procedure name")]
+    [StringLength(200)]
+    public string? StoredProcedureName { get; set; }
+
     public List<(int Id, string Name)> Plants { get; set; } = new();
     public List<(int Id, string Name)> Lines { get; set; } = new();
     public List<(int Id, string Code, string Name)> Indicators { get; set; } = new();

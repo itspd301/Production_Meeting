@@ -84,6 +84,11 @@ public class ProductionMeetingController : Controller
         var user = await _userManager.GetUserAsync(User);
         var result = await _meetingService.SaveEntryAsync(request, CurrentUserId, user?.FullName ?? "Unknown", cancellationToken);
 
-        return Ok(new { success = result.Success, message = result.Message });
+        return Ok(new
+        {
+            success = result.Success,
+            message = result.Message,
+            rows = result.Rows.Select(r => new { kpiId = r.KpiId, monthCumValue = r.MonthCumValue, ytdValue = r.YtdValue })
+        });
     }
 }

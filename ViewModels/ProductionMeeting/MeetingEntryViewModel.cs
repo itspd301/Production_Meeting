@@ -13,6 +13,10 @@ public class MeetingEntryViewModel
     public string? Remarks { get; set; }
     public bool ReadOnly { get; set; }
 
-    public List<(int Id, string Name)> Models { get; set; } = new();
+    // Fiscal year (April-March) based column labels for the F26/F27 columns - shift
+    // forward every April (see PmDates.FiscalTargetLabels).
+    public string F26Label { get; set; } = null!;
+    public string F27Label { get; set; } = null!;
+
     public List<IndicatorGroupViewModel> IndicatorGroups { get; set; } = new();
 }

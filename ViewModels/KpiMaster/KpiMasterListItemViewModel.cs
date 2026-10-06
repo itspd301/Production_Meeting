@@ -11,6 +11,10 @@ public class KpiMasterListItemViewModel
     public string Description { get; set; } = null!;
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; }
+    public decimal? F26Value { get; set; }
+    public decimal? F27Value { get; set; }
+    public bool IsSourcedFromStoredProcedure { get; set; }
+    public string? StoredProcedureName { get; set; }
 }
 
 public class KpiMasterIndexViewModel

@@ -64,7 +64,11 @@ public class KpiMasterService : IKpiMasterService
                 UnitName = k.Unit.Name,
                 Description = k.Description,
                 DisplayOrder = k.DisplayOrder,
-                IsActive = k.IsActive
+                IsActive = k.IsActive,
+                F26Value = k.F26Value,
+                F27Value = k.F27Value,
+                IsSourcedFromStoredProcedure = k.IsSourcedFromStoredProcedure,
+                StoredProcedureName = k.StoredProcedureName
             })
             .ToListAsync(cancellationToken);
 
@@ -104,6 +108,10 @@ public class KpiMasterService : IKpiMasterService
             DisplayOrder = kpi.DisplayOrder,
             IsActive = kpi.IsActive,
             LowerIsBetter = kpi.LowerIsBetter,
+            F26Value = kpi.F26Value,
+            F27Value = kpi.F27Value,
+            IsSourcedFromStoredProcedure = kpi.IsSourcedFromStoredProcedure,
+            StoredProcedureName = kpi.StoredProcedureName,
             Plants = await GetPlantOptionsAsync(cancellationToken),
             Lines = await GetLinesForPlantAsync(kpi.PlantId, cancellationToken),
             Indicators = await GetIndicatorOptionsAsync(cancellationToken),
@@ -132,6 +140,10 @@ public class KpiMasterService : IKpiMasterService
             DisplayOrder = form.DisplayOrder,
             IsActive = form.IsActive,
             LowerIsBetter = form.LowerIsBetter,
+            F26Value = form.F26Value,
+            F27Value = form.F27Value,
+            IsSourcedFromStoredProcedure = form.IsSourcedFromStoredProcedure,
+            StoredProcedureName = form.IsSourcedFromStoredProcedure ? form.StoredProcedureName?.Trim() : null,
             CreatedBy = userId
         });
 
@@ -169,6 +181,10 @@ public class KpiMasterService : IKpiMasterService
         kpi.DisplayOrder = form.DisplayOrder;
         kpi.IsActive = form.IsActive;
         kpi.LowerIsBetter = form.LowerIsBetter;
+        kpi.F26Value = form.F26Value;
+        kpi.F27Value = form.F27Value;
+        kpi.IsSourcedFromStoredProcedure = form.IsSourcedFromStoredProcedure;
+        kpi.StoredProcedureName = form.IsSourcedFromStoredProcedure ? form.StoredProcedureName?.Trim() : null;
         kpi.ModifiedBy = userId;
         kpi.ModifiedDate = DateTime.UtcNow;
 
