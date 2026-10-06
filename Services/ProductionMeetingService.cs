@@ -162,7 +162,8 @@ public class ProductionMeetingService : IProductionMeetingService
             .Where(t => t.SessionId == session.SessionId)
             .ToListAsync(cancellationToken);
 
-        var rows = new List<(IndicatorGroupViewModel Group, KpiEntryRowViewModel Row)>();
+        var priorByKpi = await GetLatestPriorTransactionsAsync(session.PlantId, session.LineId, session.MeetingDate, cancellationToken);
+
         var groups = kpis
             .GroupBy(k => k.Indicator)
             .Select(g => new IndicatorGroupViewModel
@@ -173,6 +174,7 @@ public class ProductionMeetingService : IProductionMeetingService
                 Rows = g.Select(k =>
                 {
                     var tx = transactions.FirstOrDefault(t => t.KpiId == k.KpiId);
+                    var prior = priorByKpi.GetValueOrDefault(k.KpiId);
                     return new KpiEntryRowViewModel
                     {
                         KpiId = k.KpiId,
@@ -189,7 +191,14 @@ public class ProductionMeetingService : IProductionMeetingService
                         MonthCumValue = tx?.MonthCumValue,
                         YtdValue = tx?.YtdValue,
                         Remarks = tx?.Remarks,
-                        IsSpSourced = k.IsSourcedFromStoredProcedure && !string.IsNullOrWhiteSpace(k.StoredProcedureName)
+                        IsSpSourced = k.IsSourcedFromStoredProcedure && !string.IsNullOrWhiteSpace(k.StoredProcedureName),
+                        // What the browser needs to recompute Month Cum./YTD live as the Week
+                        // cell changes, without waiting for a round trip - see IsNewMonth(...)
+                        // in Entry.cshtml's JS, which mirrors ComputeCumulativeValues below.
+                        PreviousMonthCumValue = prior?.MonthCumValue,
+                        PreviousYtdValue = prior?.YtdValue,
+                        IsNewMonth = prior == null || prior.Session.MeetingDate.Month != session.MeetingDate.Month || prior.Session.MeetingDate.Year != session.MeetingDate.Year,
+                        IsNewFiscalYear = prior == null || PmDates.FiscalYearEndYear(prior.Session.MeetingDate) != PmDates.FiscalYearEndYear(session.MeetingDate)
                     };
                 }).ToList()
             }).ToList();
@@ -246,17 +255,29 @@ public class ProductionMeetingService : IProductionMeetingService
         }
     }
 
+    // One query for the whole session instead of one per KPI: for each KPI, the most
+    // recent earlier week that actually has a WeekValue. Used both to compute Month
+    // Cum./YTD at save time and to give the Entry grid what it needs to preview them live.
+    private async Task<Dictionary<int, KpiTransaction>> GetLatestPriorTransactionsAsync(int plantId, int lineId, DateTime beforeDate, CancellationToken cancellationToken)
+    {
+        var priorTransactions = await _db.KpiTransactions
+            .Include(t => t.Session)
+            .Where(t => t.Session.PlantId == plantId && t.Session.LineId == lineId
+                     && t.Session.MeetingDate < beforeDate && t.WeekValue.HasValue)
+            .ToListAsync(cancellationToken);
+
+        return priorTransactions
+            .GroupBy(t => t.KpiId)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(t => t.Session.MeetingDate).First());
+    }
+
     // Month Cum. resets to this week's value whenever the calendar month changes since the
     // last entered week; YTD resets whenever the April-March fiscal year changes. Otherwise
-    // each keeps accumulating on top of the previous week's figure.
-    private async Task<(decimal? MonthCumValue, decimal? YtdValue)> ComputeCumulativeValuesAsync(int plantId, int lineId, int kpiId, DateTime meetingDate, decimal weekValue, CancellationToken cancellationToken)
+    // each keeps accumulating on top of the previous week's figure. Mirrored client-side in
+    // Entry.cshtml so the grid can preview these before the row is even saved.
+    private static (decimal? MonthCumValue, decimal? YtdValue) ComputeCumulativeValues(Dictionary<int, KpiTransaction> priorByKpi, int kpiId, DateTime meetingDate, decimal weekValue)
     {
-        var previous = await _db.KpiTransactions
-            .Include(t => t.Session)
-            .Where(t => t.KpiId == kpiId && t.Session.PlantId == plantId && t.Session.LineId == lineId
-                     && t.Session.MeetingDate < meetingDate && t.WeekValue.HasValue)
-            .OrderByDescending(t => t.Session.MeetingDate)
-            .FirstOrDefaultAsync(cancellationToken);
+        var previous = priorByKpi.GetValueOrDefault(kpiId);
 
         var isNewMonth = previous == null || previous.Session.MeetingDate.Month != meetingDate.Month || previous.Session.MeetingDate.Year != meetingDate.Year;
         var isNewFiscalYear = previous == null || PmDates.FiscalYearEndYear(previous.Session.MeetingDate) != PmDates.FiscalYearEndYear(meetingDate);
@@ -284,6 +305,8 @@ public class ProductionMeetingService : IProductionMeetingService
             .Where(t => t.SessionId == request.SessionId)
             .ToListAsync(cancellationToken);
 
+        var priorByKpi = await GetLatestPriorTransactionsAsync(session.PlantId, session.LineId, session.MeetingDate, cancellationToken);
+
         var auditsToAdd = new List<KpiTransactionAudit>();
         var rowTotals = new List<SavedRowTotals>();
         var now = DateTime.UtcNow;
@@ -295,7 +318,7 @@ public class ProductionMeetingService : IProductionMeetingService
             decimal? monthCum = null, ytd = null;
             if (row.WeekValue.HasValue)
             {
-                (monthCum, ytd) = await ComputeCumulativeValuesAsync(session.PlantId, session.LineId, row.KpiId, session.MeetingDate, row.WeekValue.Value, cancellationToken);
+                (monthCum, ytd) = ComputeCumulativeValues(priorByKpi, row.KpiId, session.MeetingDate, row.WeekValue.Value);
             }
 
             if (existing == null)

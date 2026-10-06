@@ -29,6 +29,14 @@ public class KpiEntryRowViewModel
     // stored procedure. The fetched value is still just a starting point - the user can
     // type over it like any other cell.
     public bool IsSpSourced { get; set; }
+
+    // Inputs the Entry grid's JS needs to preview Month Cum./YTD the instant the Week cell
+    // changes, instead of waiting for a save round trip (mirrors
+    // ProductionMeetingService.ComputeCumulativeValues).
+    public decimal? PreviousMonthCumValue { get; set; }
+    public decimal? PreviousYtdValue { get; set; }
+    public bool IsNewMonth { get; set; }
+    public bool IsNewFiscalYear { get; set; }
 }
 
 public class IndicatorGroupViewModel

@@ -56,7 +56,10 @@
                             <td><input type="number" step="0.01" class="form-control form-control-sm pm-f-f26" value="@row.F26Value" data-master-value="@row.MasterF26Value" @(isReadOnly ? "readonly" : "") /></td>
                             <td><input type="number" step="0.01" class="form-control form-control-sm pm-f-f27" value="@row.F27Value" data-master-value="@row.MasterF27Value" @(isReadOnly ? "readonly" : "") /></td>
                             <td>
-                                <input type="number" step="1" class="form-control form-control-sm pm-f-week" value="@row.WeekValue" @(isReadOnly ? "readonly" : "") />
+                                <input type="number" step="1" class="form-control form-control-sm pm-f-week" value="@row.WeekValue"
+                                       data-prev-month="@row.PreviousMonthCumValue" data-prev-ytd="@row.PreviousYtdValue"
+                                       data-new-month="@row.IsNewMonth.ToString().ToLowerInvariant()" data-new-fy="@row.IsNewFiscalYear.ToString().ToLowerInvariant()"
+                                       @(isReadOnly ? "readonly" : "") />
                                 @if (row.IsSpSourced)
                                 {
                                     <i class="bi bi-database-gear text-muted" title="Auto-filled from stored procedure - you can still edit it"></i>
@@ -141,6 +144,40 @@
                     toastr.error('An error occurred while saving.');
                 });
         }
+
+        // Live preview of Month Cum./YTD as the Week cell changes, mirroring
+        // ProductionMeetingService.ComputeCumulativeValues - the authoritative figures
+        // still come back from the server on Save and overwrite this preview.
+        function recalcCumulative($row) {
+            var $week = $row.find('.pm-f-week');
+            var weekVal = parseFloat($week.val());
+            var $month = $row.find('.pm-f-month');
+            var $ytd = $row.find('.pm-f-ytd');
+
+            if (isNaN(weekVal)) {
+                $month.text('');
+                $ytd.text('');
+                return;
+            }
+
+            var isNewMonth = $week.data('new-month') === true || $week.data('new-month') === 'true';
+            var isNewFy = $week.data('new-fy') === true || $week.data('new-fy') === 'true';
+            var prevMonth = parseFloat($week.data('prev-month'));
+            var prevYtd = parseFloat($week.data('prev-ytd'));
+
+            var monthCum = isNewMonth ? weekVal : (isNaN(prevMonth) ? 0 : prevMonth) + weekVal;
+            var ytd = isNewFy ? weekVal : (isNaN(prevYtd) ? 0 : prevYtd) + weekVal;
+
+            $month.text(Math.round(monthCum * 100) / 100);
+            $ytd.text(Math.round(ytd * 100) / 100);
+        }
+
+        $('.pm-entry-table').on('input', '.pm-f-week', function () {
+            recalcCumulative($(this).closest('tr'));
+        });
+        // Also run once on load so a stored-procedure-fetched Week value (not yet saved)
+        // shows its preview immediately instead of staying blank.
+        $('.pm-f-week').each(function () { recalcCumulative($(this).closest('tr')); });
 
         $('#btnSaveDraft').on('click', function () { saveEntry(false); });
         $('#btnComplete').on('click', function () {
