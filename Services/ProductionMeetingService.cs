@@ -198,7 +198,7 @@ public class ProductionMeetingService : IProductionMeetingService
                         PreviousMonthCumValue = prior?.MonthCumValue,
                         PreviousYtdValue = prior?.YtdValue,
                         IsNewMonth = prior == null || prior.Session.MeetingDate.Month != session.MeetingDate.Month || prior.Session.MeetingDate.Year != session.MeetingDate.Year,
-                        IsNewFiscalYear = prior == null || PmDates.FiscalYearEndYear(prior.Session.MeetingDate) != PmDates.FiscalYearEndYear(session.MeetingDate)
+                        IsNewFiscalYear = prior == null || PmDates.FiscalYearEndYearOfWeek(prior.Session.MeetingDate) != PmDates.FiscalYearEndYearOfWeek(session.MeetingDate)
                     };
                 }).ToList()
             }).ToList();
@@ -280,7 +280,7 @@ public class ProductionMeetingService : IProductionMeetingService
         var previous = priorByKpi.GetValueOrDefault(kpiId);
 
         var isNewMonth = previous == null || previous.Session.MeetingDate.Month != meetingDate.Month || previous.Session.MeetingDate.Year != meetingDate.Year;
-        var isNewFiscalYear = previous == null || PmDates.FiscalYearEndYear(previous.Session.MeetingDate) != PmDates.FiscalYearEndYear(meetingDate);
+        var isNewFiscalYear = previous == null || PmDates.FiscalYearEndYearOfWeek(previous.Session.MeetingDate) != PmDates.FiscalYearEndYearOfWeek(meetingDate);
 
         var monthCum = isNewMonth ? weekValue : (previous!.MonthCumValue ?? 0) + weekValue;
         var ytd = isNewFiscalYear ? weekValue : (previous!.YtdValue ?? 0) + weekValue;

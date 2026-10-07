@@ -128,7 +128,7 @@ public class ExecutiveDashboardService : IExecutiveDashboardService
             .ToList();
 
         filters.SummaryWeekLabel =
-            $"Week {System.Globalization.ISOWeek.GetWeekOfYear(filters.WeekStart)}";
+            $"Week {PmDates.FiscalWeekNumber(filters.WeekStart)}";
 
         filters.SummaryWeekDates =
             $"{filters.WeekStart:dd MMM} - {filters.WeekStart.AddDays(6):dd MMM yyyy}";
@@ -138,8 +138,8 @@ public class ExecutiveDashboardService : IExecutiveDashboardService
                 ? "Data Complete"
                 : "Data Pending";
 
-        filters.SummaryFyLabel =
-            $"FY {filters.WeekStart.Year % 100}-{(filters.WeekStart.Year + 1) % 100}";
+        var fyEnd = PmDates.FiscalYearEndYearOfWeek(filters.WeekStart);
+        filters.SummaryFyLabel = $"FY {(fyEnd - 1) % 100:D2}-{fyEnd % 100:D2}";
 
         filters.SummaryLastRefreshed =
             filters.LastRefreshed?.ToString("dd MMM yyyy hh:mm tt") ?? "-";
@@ -200,11 +200,9 @@ public class ExecutiveDashboardService : IExecutiveDashboardService
             Target = currentTx?.F27Value,
             Points = historySessions.Select(s => new KpiTrendPoint
             {
-                WeekLabel = $"W{ISOWeekNumber(s.MeetingDate)}",
+                WeekLabel = $"W{PmDates.FiscalWeekNumber(s.MeetingDate)}",
                 Value = transactions.FirstOrDefault(t => t.SessionId == s.SessionId)?.WeekValue
             }).ToList()
         };
     }
-
-    private static int ISOWeekNumber(DateTime date) => System.Globalization.ISOWeek.GetWeekOfYear(date);
 }
