@@ -12,11 +12,16 @@ public class ExecutiveDashboardService : IExecutiveDashboardService
 
     private readonly ApplicationDbContext _db;
     private readonly IUserAccessService _accessService;
+    private readonly ILogger<ExecutiveDashboardService> _logger;
 
-    public ExecutiveDashboardService(ApplicationDbContext db, IUserAccessService accessService)
+    public ExecutiveDashboardService(
+        ApplicationDbContext db,
+        IUserAccessService accessService,
+        ILogger<ExecutiveDashboardService> logger)
     {
         _db = db;
         _accessService = accessService;
+        _logger = logger;
     }
 
     public async Task<ExecutiveDashboardViewModel> GetDashboardAsync(ExecutiveDashboardViewModel filters, string userId, bool isAdmin, CancellationToken cancellationToken = default)
@@ -144,16 +149,113 @@ public class ExecutiveDashboardService : IExecutiveDashboardService
         filters.SummaryLastRefreshed =
             filters.LastRefreshed?.ToString("dd MMM yyyy hh:mm tt") ?? "-";
 
+        filters.TopDefects = await TryGetTopDefectsAsync(lineId, filters.WeekStart, cancellationToken);
+        filters.ManpowerDays = await TryGetManpowerDaysAsync(lineId, filters.WeekStart, cancellationToken);
+
         return filters;
     }
 
-    // Everything below is placeholder/sample data until it's wired up to a stored
-    // procedure (same pattern as DashboardService.TryGetScalarAsync for the Straight Pass
-    // Ratio / Traceability cards). Replace each assignment with a real SP-backed value as
-    // those become available - group by group, this can be swapped out incrementally.
+    private async Task<List<(string Name, int Count)>> TryGetTopDefectsAsync(
+        int shopId,
+        DateTime weekStart,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var rows = await _db.Database.SqlQuery<TopDefectProcedureRow>(
+                    $"EXEC dbo.USP_Top5_Defects_CurrentMonth @ShopId = {shopId}, @WeekStart = {weekStart}")
+                .ToListAsync(cancellationToken);
 
+            return rows
+                .Where(row => !string.IsNullOrWhiteSpace(row.Defect_Name))
+                .Select(row => (row.Defect_Name, row.Defect_Count))
+                .ToList();
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Could not fetch top rework defects for shop {ShopId} and week {WeekStart}.",
+                shopId,
+                weekStart);
+            return new List<(string Name, int Count)>();
+        }
+    }
 
+    private async Task<List<ManpowerDayViewModel>> TryGetManpowerDaysAsync(
+        int shopId,
+        DateTime weekStart,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var rows = await _db.Database.SqlQuery<ManpowerProcedureRow>(
+                    $"EXEC DRONAADNSK_11012019.dbo.USP_ManpowerDeploymentByWeek @ShopId = {shopId}, @WeekStart = {weekStart}")
+                .ToListAsync(cancellationToken);
 
+            return rows
+                .Where(row => row.ShiftName is "1st" or "2nd" or "3rd")
+                .GroupBy(row => row.ShiftDate.Date)
+                .OrderBy(group => group.Key)
+                .Select(group =>
+                {
+                    var shifts = group
+                        .GroupBy(row => row.ShiftName)
+                        .ToDictionary(
+                            shiftGroup => shiftGroup.Key,
+                            shiftGroup =>
+                            {
+                                var associates = shiftGroup.Sum(row => row.AssociateCount);
+                                var required = shiftGroup.Sum(row => row.RequiredWorkstations);
+                                return new ManpowerShiftViewModel
+                                {
+                                    ShiftName = shiftGroup.Key,
+                                    AssociateCount = associates,
+                                    RequiredWorkstations = required,
+                                    Deployment = CalculateDeployment(associates, required)
+                                };
+                            });
+                    var orderedShifts = new[] { "1st", "2nd", "3rd" }
+                        .Where(shifts.ContainsKey)
+                        .Select(shiftName => shifts[shiftName])
+                        .ToList();
+
+                    var totalAssociates = orderedShifts.Sum(shift => shift.AssociateCount);
+                    var totalRequired = orderedShifts.Sum(shift => shift.RequiredWorkstations);
+                    return new ManpowerDayViewModel
+                    {
+                        Date = group.Key,
+                        AssociateCount = totalAssociates,
+                        RequiredWorkstations = totalRequired,
+                        Deployment = CalculateDeployment(totalAssociates, totalRequired),
+                        Shifts = orderedShifts
+                    };
+                })
+                .ToList();
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Could not fetch manpower deployment for shop {ShopId} and week {WeekStart}.",
+                shopId,
+                weekStart);
+            return new List<ManpowerDayViewModel>();
+        }
+    }
+
+    private static int CalculateDeployment(int associates, int requiredWorkstations) =>
+        requiredWorkstations <= 0
+            ? 0
+            : Math.Min(100, (int)(associates * 100.0 / requiredWorkstations));
 
     public async Task<ServiceResult> SaveRemarksAsync(int sessionId, string? remarks, string userId, CancellationToken cancellationToken = default)
     {
@@ -204,5 +306,19 @@ public class ExecutiveDashboardService : IExecutiveDashboardService
                 Value = transactions.FirstOrDefault(t => t.SessionId == s.SessionId)?.WeekValue
             }).ToList()
         };
+    }
+
+    private sealed class TopDefectProcedureRow
+    {
+        public string Defect_Name { get; set; } = "";
+        public int Defect_Count { get; set; }
+    }
+
+    private sealed class ManpowerProcedureRow
+    {
+        public string ShiftName { get; set; } = "";
+        public DateTime ShiftDate { get; set; }
+        public int AssociateCount { get; set; }
+        public int RequiredWorkstations { get; set; }
     }
 }

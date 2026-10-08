@@ -28,6 +28,23 @@ public class ExecutiveTrendSeriesViewModel
     public List<decimal?> Values { get; set; } = new();
 }
 
+public class ManpowerShiftViewModel
+{
+    public string ShiftName { get; set; } = "";
+    public int AssociateCount { get; set; }
+    public int RequiredWorkstations { get; set; }
+    public int Deployment { get; set; }
+}
+
+public class ManpowerDayViewModel
+{
+    public DateTime Date { get; set; }
+    public int AssociateCount { get; set; }
+    public int RequiredWorkstations { get; set; }
+    public int Deployment { get; set; }
+    public List<ManpowerShiftViewModel> Shifts { get; set; } = new();
+}
+
 public class ExecutiveDashboardViewModel
 {
     // Filters
@@ -60,6 +77,7 @@ public class ExecutiveDashboardViewModel
     public List<string> TrendWeekLabels { get; set; } = new();
     public List<ExecutiveTrendSeriesViewModel> TrendSeries { get; set; } = new();
     public List<ExecutiveTrendSeriesViewModel> ManpowerSeries { get; set; } = new();
+    public List<ManpowerDayViewModel> ManpowerDays { get; set; } = new();
     public List<(string Name, int Count)> TopDefects { get; set; } = new();
 
     public List<ExecutiveKpiCardViewModel> Highlights { get; set; } = new();

@@ -6,12 +6,17 @@
 <div class="pm-card">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="mb-0">KPI History Report</h5>
-        <a asp-action="Export"
-           asp-route-plantId="@Model.PlantId" asp-route-lineId="@Model.LineId" asp-route-indicatorId="@Model.IndicatorId"
-           asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")"
-           class="btn btn-success btn-sm">
-            <i class="bi bi-file-earmark-excel"></i> Export to Excel
-        </a>
+        <div class="d-flex gap-2">
+            <a asp-action="Weekly" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-calendar-week"></i> Weekly comparison
+            </a>
+            <a asp-action="Export"
+               asp-route-plantId="@Model.PlantId" asp-route-lineId="@Model.LineId" asp-route-indicatorId="@Model.IndicatorId"
+               asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")"
+               class="btn btn-success btn-sm">
+                <i class="bi bi-file-earmark-excel"></i> Export to Excel
+            </a>
+        </div>
     </div>
 
     <form method="get" class="row g-2 mb-3">

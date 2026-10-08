@@ -1,0 +1,179 @@
+@model WeeklyReportViewModel
+@{
+    ViewData["Title"] = "Weekly Report";
+    string StatusClass(string status) => status switch
+    {
+        "Green" => "status-green",
+        "Amber" => "status-amber",
+        "Red" => "status-red",
+        _ => "status-neutral"
+    };
+}
+
+<div class="pm-card">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h5 class="mb-1">Weekly KPI Comparison</h5>
+            @if (Model.Weeks.Count > 0)
+            {
+                <div class="text-muted small">
+                    @PmDates.WeekLabel(Model.StartWeekStart) through @PmDates.WeekLabel(Model.EndWeekStart)
+                    (@Model.Weeks.Count weeks)
+                </div>
+            }
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-clock-history"></i> KPI History
+            </a>
+            <a asp-action="ExportWeekly"
+               asp-route-startWeek="@Model.StartWeek"
+               asp-route-endWeek="@Model.EndWeek"
+               asp-route-plantId="@Model.PlantId"
+               asp-route-lineId="@Model.LineId"
+               asp-route-indicatorId="@Model.IndicatorId"
+               class="btn btn-success btn-sm">
+                <i class="bi bi-file-earmark-excel"></i> Export to Excel
+            </a>
+        </div>
+    </div>
+
+    <form method="get" asp-action="Weekly" class="row g-2 mb-4">
+        <div class="col-sm-6 col-lg-2">
+            <label class="form-label small" for="startWeek">Start week</label>
+            <input type="week" id="startWeek" name="startWeek" class="form-control" value="@Model.StartWeek" required />
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <label class="form-label small" for="endWeek">End week</label>
+            <input type="week" id="endWeek" name="endWeek" class="form-control" value="@Model.EndWeek" required />
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <label class="form-label small" for="plantId">Plant</label>
+            <select name="plantId" id="plantId" class="form-select" onchange="this.form.submit()">
+                <option value="">All Plants</option>
+                @foreach (var plant in Model.Plants)
+                {
+                    <option value="@plant.Id" selected="@(Model.PlantId == plant.Id)">@plant.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <label class="form-label small" for="lineId">Shop</label>
+            <select name="lineId" id="lineId" class="form-select">
+                <option value="">All Shops</option>
+                @foreach (var line in Model.Lines)
+                {
+                    <option value="@line.Id" selected="@(Model.LineId == line.Id)">@line.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <label class="form-label small" for="indicatorId">Indicator</label>
+            <select name="indicatorId" id="indicatorId" class="form-select">
+                <option value="">All Indicators</option>
+                @foreach (var indicator in Model.Indicators)
+                {
+                    <option value="@indicator.Id" selected="@(Model.IndicatorId == indicator.Id)">@indicator.Code — @indicator.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-sm-6 col-lg-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-outline-secondary w-100">
+                <i class="bi bi-funnel"></i> Apply filters
+            </button>
+        </div>
+    </form>
+
+    @if (Model.RangeError != null)
+    {
+        <div class="alert alert-warning" role="alert">@Model.RangeError</div>
+    }
+    else
+    {
+        var lastWeekValues = Model.Rows.Select(row => row.Values.Last()).ToList();
+        var latestEntered = lastWeekValues.Count(value => value.Value.HasValue);
+        var latestGreen = lastWeekValues.Count(value => value.Status == "Green");
+        var latestAttention = lastWeekValues.Count(value => value.Status is "Amber" or "Red");
+
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="pm-dash-card"><span>Weeks shown</span><strong>@Model.Weeks.Count</strong><small>Selected range</small></div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="pm-dash-card"><span>Latest week entered</span><strong class="good">@latestEntered / @Model.TotalCount</strong><small>@(Model.TotalCount - latestEntered) pending</small></div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="pm-dash-card"><span>Latest week green</span><strong class="good">@latestGreen</strong><small>On target</small></div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="pm-dash-card"><span>Latest week attention</span><strong class="warn">@latestAttention</strong><small>Amber or red</small></div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="pm-dash-card"><span>Improved values</span><strong class="good">@Model.ImprovedCount</strong><small>Week-to-week comparisons</small></div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="pm-dash-card"><span>Declined values</span><strong class="bad">@Model.DeclinedCount</strong><small>Week-to-week comparisons</small></div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Plant</th>
+                        <th>Shop</th>
+                        <th>Indicator</th>
+                        <th>KPI</th>
+                        <th>Unit</th>
+                        @foreach (var week in Model.Weeks)
+                        {
+                            <th class="text-center" title="@week.Label">@week.Start.ToString("dd MMM")<br /><small>@week.Start.ToString("yyyy")</small></th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Rows.Count == 0)
+                    {
+                        <tr><td colspan="@(5 + Model.Weeks.Count)" class="text-center text-muted py-4">No KPIs found for the selected filters.</td></tr>
+                    }
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td>@row.PlantName</td>
+                            <td>@row.LineName</td>
+                            <td><span class="pm-indicator-cell pm-ind-@row.IndicatorCode d-inline-block px-2 py-1 rounded">@row.IndicatorCode</span></td>
+                            <td>@row.KpiDescription</td>
+                            <td>@row.UnitName</td>
+                            @foreach (var value in row.Values)
+                            {
+                                var comparisonClass = value.Comparison switch
+                                {
+                                    "Improved" => "text-success",
+                                    "Declined" => "text-danger",
+                                    _ => "text-muted"
+                                };
+                                <td class="text-center" title="@value.Comparison">
+                                    <div class="fw-semibold">@(value.Value?.ToString("0.##") ?? "—")</div>
+                                    <span class="pm-badge-status @StatusClass(value.Status)">@value.Status</span>
+                                    @if (value.Target.HasValue)
+                                    {
+                                        <div class="small text-muted">Target: @value.Target.Value.ToString("0.##")</div>
+                                    }
+                                    @if (value.Change.HasValue)
+                                    {
+                                        <div class="small @comparisonClass">
+                                            @value.Change.Value.ToString("+0.##;-0.##;0")
+                                        </div>
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <p class="text-muted small mt-3 mb-0">
+            Each week cell shows the actual, target status, and change from the preceding week (including the week before the selected range for the first column). Change direction accounts for whether lower or higher is better. A dash means no value was entered.
+        </p>
+    }
+</div>

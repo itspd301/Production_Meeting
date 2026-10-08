@@ -369,10 +369,14 @@ Builds the **Executive Dashboard** (`/Dashboard/Executive`) — same Plant/Line/
 KPI cards grouped by Indicator, Highlights (first 5 Green KPIs) / Lowlights (first 5 Red),
 plus `SaveRemarksAsync` (saves free text onto the `MeetingSession`, a real working feature)
 and `GetKpiTrendAsync` (last-6-weeks trend for one KPI, used by a click-through modal).
-⚠️ **`TrendWeekLabels`/`TrendSeries`/`ManpowerSeries`/`TopDefects` on the view model are never
-populated by this service** — they stay empty lists. `Helpers/DefectParser.cs` exists
-specifically to parse a "Top 5 Defects" breakdown out of Rework KPI remarks, but nothing
-currently calls it. If you want those charts working again, that's the place to wire back up.
+The Top 5 Rework Defects chart is populated by `dbo.USP_Top5_Defects_CurrentMonth`, using
+the selected line as `@ShopId` and selected week's Monday as `@WeekStart`. The procedure
+definition is in `Sharing Data/TopFiveDefects.sql`; deploy it to SQL Server separately.
+The Manpower Deployed chart loads each day of the selected week from
+`dbo.USP_ManpowerDeploymentByWeek`; clicking a day shows its first, second, and third shift
+counts and deployment percentages. Its procedure definition is in
+`Sharing Data/ManpowerDeploymentByWeek.sql`. The Quality & Delivery trend chart is not
+populated yet.
 
 ### `IKpiMasterService` / `KpiMasterService`
 Backs the **KPI Master** admin screen (`/KpiMaster`) — CRUD for `KpiMaster` rows. Enforces
@@ -398,7 +402,11 @@ ever created or shown (`IUserAccessService.CanAccessLineAsync`).
 ### `IReportService` / `ReportService`
 Backs the **Reports** page (`/Reports`) — a flattened, filterable, paginated view over every
 `KpiTransaction` (joined to Session/Plant/Line/KPI/Indicator/Unit), plus an unpaginated
-version of the same query for Excel export. No stored procedures.
+version of the same query for Excel export. Its Weekly action (`/Reports/Weekly`) compares
+each configured KPI across a selected start/end week range in one side-by-side matrix,
+including each week's target status and change from the preceding week. It includes summary
+counts, selectable plant/shop/indicator filters, and Excel export. Plant/shop scopes use the
+current user's grants.
 
 ### `IUserAccessService` / `UserAccessService`
 The central access-control gate (§3) — every other service that needs to scope data to a
@@ -414,14 +422,15 @@ rows. Admins are never given access rows (they don't need them).
 |---|---|---|---|
 | `DashboardService` | `dbo.usp_GetStraightPassRatio` | `@PlantId, @LineId, @WeekStart` | decimal |
 | `DashboardService` | `dbo.usp_GetTraceability` | `@PlantId, @LineId, @WeekStart` | decimal |
+| `ExecutiveDashboardService` | `dbo.USP_Top5_Defects_CurrentMonth` | `@ShopId, @WeekStart` | `Defect_Name, Defect_Count` (up to 5 rows) |
+| `ExecutiveDashboardService` | `dbo.USP_ManpowerDeploymentByWeek` | `@ShopId, @WeekStart` | daily/shift counts |
 | `ProductionMeetingService` | whatever's in `KpiMaster.StoredProcedureName` | `@PlantId, @LineId, @WeekStart` | decimal |
 
-All three are called through `_db.Database.SqlQuery<decimal>(FormattableString)` — EF Core
-parameterizes every interpolated value automatically, so this is safe from SQL injection even
-though it reads like string interpolation. **None of these procedures exist in this
-codebase** — they're expected to already exist in the target SQL Server database. If one is
-missing, the call fails, gets logged as a warning, and the UI just shows "-" or leaves the
-cell blank instead of crashing.
+These procedures are called using parameterized EF Core SQL queries. The definitions for
+`dbo.USP_Top5_Defects_CurrentMonth` and `dbo.USP_ManpowerDeploymentByWeek` are in
+`Sharing Data/`; deploy them separately to the target SQL Server database. The other
+procedures must already exist there. If a procedure is missing, the call fails, gets logged
+as a warning, and the UI shows "-" or leaves the chart empty instead of crashing.
 
 ---
 
@@ -527,9 +536,9 @@ case.
 - **SQL Server** itself, obviously — connection string in `appsettings.Development.json`
   locally, environment variable in production (see `DEPLOYMENT.md`).
 - **Stored procedures** `dbo.usp_GetStraightPassRatio`, `dbo.usp_GetTraceability`, and
-  whatever's configured per-KPI in `KpiMaster.StoredProcedureName` — these must be created
-  directly in the database; nothing in this codebase defines them. `Sharing Data/SP for
-  PressShop.txt` may be a draft of one; worth checking if you're about to add a new one.
+  whatever's configured per-KPI in `KpiMaster.StoredProcedureName` must be created directly
+  in the target database. `dbo.USP_Top5_Defects_CurrentMonth` is defined in
+  `Sharing Data/TopFiveDefects.sql` and must also be deployed separately.
 - **CDN-hosted JS/CSS**: Bootstrap/Bootstrap Icons/Toastr/DataTables/Chart.js are loaded from
   CDN links in `_Layout.cshtml` (and `Executive.cshtml` for Chart.js specifically) — vendored
   copies of Bootstrap/jQuery also exist locally under `wwwroot/lib/` as a fallback set.
@@ -538,14 +547,9 @@ case.
 
 ## 13. Things that look like they should do something but don't (yet)
 
-- **Executive Dashboard trend/manpower/defects charts** — the view model has the fields
-  (`TrendWeekLabels`, `TrendSeries`, `ManpowerSeries`, `TopDefects`), the view has the chart
-  panels, `Helpers/DefectParser.cs` exists specifically to parse defect breakdowns out of
-  Rework KPI remarks — but `ExecutiveDashboardService.GetDashboardAsync` never populates any
-  of them. They currently render empty. This was a deliberate placeholder decision made
-  earlier in the project (to show sample data while other parts stay real), then the KPI-card
-  sections were switched back to live data in a later edit — the chart-feeding code for this
-  specific set of fields just hasn't been reconnected since.
+- **Executive Dashboard Quality & Delivery trend chart** — its view-model fields and chart
+  panel exist, but no data is currently populated for it. The Top 5 Rework Defects and
+  Manpower Deployed charts read the selected shop/week from their stored procedures.
 - **Vehicle Model dropdown removed from the Entry grid** — by request, the weekly entry screen
   no longer lets you pick a `ProductModel` per row. The `ProductModel` entity, the Master Data
   admin screen for it, and `KpiTransaction.ModelId` **all still exist** in the schema (nothing
@@ -586,11 +590,11 @@ figure). One place, used by both dashboards.
 proc @Param = {value}, ...")` call in try/catch, log a warning on failure, return `null` rather
 than letting it throw.
 
-**Reconnect the Executive Dashboard's Trend/Manpower/Top-Defects charts** → populate
-`filters.TrendWeekLabels`/`TrendSeries`/`ManpowerSeries`/`TopDefects` inside
-`ExecutiveDashboardService.GetDashboardAsync`. `Helpers/DefectParser.Parse(remarks)` is
-already written and ready to use for the defects piece — it just needs to be called against
-each Rework KPI's weekly `Remarks` and aggregated.
+**Change the Executive Dashboard's Top 5 Rework Defects data** → update
+`Sharing Data/TopFiveDefects.sql` and keep its parameters/result columns aligned with
+`ExecutiveDashboardService.TryGetTopDefectsAsync`. Deploy the SQL procedure to each target
+database; the app passes the selected `LineId` as `@ShopId` and the selected week's Monday as
+`@WeekStart`.
 
 **Change any schema** (add/remove/rename a column, table, or relationship) → edit the `Models/`
 class and, if needed, the Fluent API config in `Data/ApplicationDbContext.cs`, then from the
